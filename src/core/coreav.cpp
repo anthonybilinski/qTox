@@ -217,7 +217,7 @@ bool CoreAV::isCallVideoEnabled(const Friend* f) const
     return isCallStarted(f) ? calls[f->getId()].videoEnabled : false;
 }
 
-bool CoreAV::answerCall(uint32_t friendNum)
+bool CoreAV::answerCall(uint32_t friendNum, bool video)
 {
     if (QThread::currentThread() != coreavThread.get()) {
         if (threadSwitchLock.test_and_set(std::memory_order_acquire)) {
@@ -227,7 +227,7 @@ bool CoreAV::answerCall(uint32_t friendNum)
 
         bool ret;
         QMetaObject::invokeMethod(this, "answerCall", Qt::BlockingQueuedConnection,
-                                  Q_RETURN_ARG(bool, ret), Q_ARG(uint32_t, friendNum));
+                                  Q_RETURN_ARG(bool, ret), Q_ARG(uint32_t, friendNum), Q_ARG(bool, video));
 
         threadSwitchLock.clear(std::memory_order_release);
         return ret;
@@ -236,7 +236,8 @@ bool CoreAV::answerCall(uint32_t friendNum)
     qDebug() << QString("answering call %1").arg(friendNum);
     assert(calls.contains(friendNum));
     TOXAV_ERR_ANSWER err;
-    if (toxav_answer(toxav, friendNum, AUDIO_DEFAULT_BITRATE, VIDEO_DEFAULT_BITRATE, &err)) {
+    uint32_t videoBitrate = video ? VIDEO_DEFAULT_BITRATE : 0;
+    if (toxav_answer(toxav, friendNum, AUDIO_DEFAULT_BITRATE, videoBitrate, &err)) {
         calls[friendNum].inactive = false;
         return true;
     } else {
@@ -773,8 +774,8 @@ void CoreAV::bitrateCallback(ToxAV* toxav, uint32_t friendNum, uint32_t arate, u
                                                Q_ARG(void*, vSelf));
     }
 
-    qDebug() << "Recommended bitrate with" << friendNum << " is now " << arate << "/" << vrate
-             << ", ignoring it";
+    toxav_bit_rate_set(toxav, friendNum, arate, vrate, nullptr);
+    qWarning() << "Applying recommended bitrate change with" << friendNum << " to " << arate << "/" << vrate
 }
 
 void CoreAV::audioFrameCallback(ToxAV*, uint32_t friendNum, const int16_t* pcm, size_t sampleCount,
