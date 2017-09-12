@@ -72,6 +72,8 @@
  * deadlock.
  */
 
+const uint32_t CoreAV::AUDIO_MINIMUM_BITRATE = 0; // find something reasonable for these
+const uint32_t CoreAV::VIDEO_MINIMUM_BITRATE = 0;
 /**
  * @brief Maps friend IDs to ToxFriendCall.
  */
@@ -773,9 +775,10 @@ void CoreAV::bitrateCallback(ToxAV* toxav, uint32_t friendNum, uint32_t arate, u
                                                Q_ARG(uint32_t, arate), Q_ARG(uint32_t, vrate),
                                                Q_ARG(void*, vSelf));
     }
-
-    toxav_bit_rate_set(toxav, friendNum, arate, vrate, nullptr);
-    qWarning() << "Applying recommended bitrate change with" << friendNum << " to " << arate << "/" << vrate
+    uint32_t newArate = std::max(AUDIO_MINIMUM_BITRATE, arate);
+    uint32_t newVrate = std::max(VIDEO_MINIMUM_BITRATE, vrate);
+    toxav_bit_rate_set(toxav, friendNum, newArate, newVrate, nullptr);
+    qWarning() << "Applying recommended bitrate change with" << friendNum << " to " << newArate << "/" << newVrate;
 }
 
 void CoreAV::audioFrameCallback(ToxAV*, uint32_t friendNum, const int16_t* pcm, size_t sampleCount,

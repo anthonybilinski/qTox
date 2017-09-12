@@ -112,7 +112,9 @@ private:
 
 private:
     static constexpr uint32_t AUDIO_DEFAULT_BITRATE = 64;
+    static const uint32_t AUDIO_MINIMUM_BITRATE;
     static constexpr uint32_t VIDEO_DEFAULT_BITRATE = 6144;
+    static const uint32_t VIDEO_MINIMUM_BITRATE;
 
 private:
     ToxAV* toxav;
