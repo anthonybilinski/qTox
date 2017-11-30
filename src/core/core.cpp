@@ -1445,6 +1445,15 @@ bool Core::isReady() const
     return av && av->getToxAv() && tox && ready;
 }
 
+void Core::callWhenAvReady(std::function<void(CoreAV* av)>&& toCall)
+{
+	if (isReady()) {
+		toCall();
+	} else {
+		toCallWhenAvReady.emplace_back(std::move(toCall));
+	}
+}
+
 /**
  * @brief Sets the NoSpam value to prevent friend request spam
  * @param nospam an arbitrary which becomes part of the Tox ID
