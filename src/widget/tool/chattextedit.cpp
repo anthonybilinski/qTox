@@ -25,6 +25,7 @@
 #include <QClipboard>
 #include <QKeyEvent>
 #include <QMimeData>
+#include <QDebug>
 
 ChatTextEdit::ChatTextEdit(QWidget* parent)
     : QTextEdit(parent)
@@ -44,6 +45,8 @@ ChatTextEdit::~ChatTextEdit()
 void ChatTextEdit::keyPressEvent(QKeyEvent* event)
 {
     int key = event->key();
+    qDebug() << "scan: " << hex << event->nativeScanCode();
+    qDebug() << "native: " << hex << event->nativeVirtualKey();
     if ((key == Qt::Key_Enter || key == Qt::Key_Return) && !(event->modifiers() & Qt::ShiftModifier)) {
         emit enterPressed();
         return;

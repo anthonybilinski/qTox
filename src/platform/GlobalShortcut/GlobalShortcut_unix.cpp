@@ -32,10 +32,12 @@
 #include <QSet>
 #include <QFileSystemWatcher>
 #include <QSocketNotifier>
+#include <QDebug>
 
 #include "GlobalShortcut.h"
 #include "GlobalShortcut_unix.h"
 
+#include <X11/keysym.h>
 // TODO?: guard this whole class with #ifdef PLATFORM_EXTENSIONS
 #include <X11/X.h>
 #include <X11/Xlib.h>
@@ -231,13 +233,24 @@ void GlobalShortcutX::displayReadyRead(int) {
 		switch (cookie->evtype) {
 			case XI_RawKeyPress:
 			case XI_RawKeyRelease:
-				if (! qsMasterDevices.contains(xide->deviceid))
+				if (! qsMasterDevices.contains(xide->deviceid)) {
+					KeySym ks=XkbKeycodeToKeysym(display, static_cast<KeyCode>(xide->detail), 0, /*event.xkey.state & ShiftMask ? 1 : 0*/0);
+					const char *str=XKeysymToString(ks);
+					qDebug() << "key code int: " << hex << xide->detail;
+					qDebug() << "key sym int: " << hex << ks;
+					qDebug() << "key str: " << QLatin1String(str);
+					Qt::Key myQtKey = Qt::Key(ks);
+					qDebug() << "Qt::Key int val: " << hex << myQtKey;
+					qDebug() << "Qt::Key str val: " << QKeySequence(myQtKey).toString();
+					qDebug() << "Qt::Key str from key str: " << QKeySequence(QLatin1String(str), QKeySequence::SequenceFormat(1));
 					handleButton(xide->detail, cookie->evtype == XI_RawKeyPress);
+				}
 				break;
 			case XI_RawButtonPress:
 			case XI_RawButtonRelease:
-				if (! qsMasterDevices.contains(xide->deviceid))
+				if (! qsMasterDevices.contains(xide->deviceid)) {
 					handleButton(xide->detail + 0x117, cookie->evtype == XI_RawButtonPress);
+				}
 				break;
 			case XI_HierarchyChanged:
 				queryXIMasterList();
