@@ -733,21 +733,28 @@ QString Settings::getSettingsDirPath() const
         return qApp->applicationDirPath() + QDir::separator();
 
 // workaround for https://bugreports.qt-project.org/browse/QTBUG-38845
+#define Q_OS_WIN
 #ifdef Q_OS_WIN
-    return QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
-                           + QDir::separator() + "AppData" + QDir::separator() + "Roaming"
-                           + QDir::separator() + "tox")
-           + QDir::separator();
+    QString path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
+    + QDir::separator() + "AppData" + QDir::separator() + "Roaming"
+    + QDir::separator() + "tox";
+    QDir tmp{path};
+    auto retVal = tmp.absolutePath();
+//           + QDir::separator();
 #elif defined(Q_OS_OSX)
-    return QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
+    auto retVal = QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
                            + QDir::separator() + "Library" + QDir::separator()
                            + "Application Support" + QDir::separator() + "Tox")
            + QDir::separator();
 #else
-    return QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation)
-                           + QDir::separator() + "tox")
+    QString path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation)
+    + QDir::separator() + "tox";
+    auto retVal = QDir::cleanPath(path)
            + QDir::separator();
 #endif
+    qDebug() << "un-clean path: " << path;
+    qDebug() << "Settings::getSettingsDirPath returning: " << retVal;
+    return retVal;
 }
 
 /**
@@ -762,12 +769,12 @@ QString Settings::getAppDataDirPath() const
 
 // workaround for https://bugreports.qt-project.org/browse/QTBUG-38845
 #ifdef Q_OS_WIN
-    return QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
+    auto retVal = QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
                            + QDir::separator() + "AppData" + QDir::separator() + "Roaming"
                            + QDir::separator() + "tox")
            + QDir::separator();
 #elif defined(Q_OS_OSX)
-    return QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
+    auto retVal = QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
                            + QDir::separator() + "Library" + QDir::separator()
                            + "Application Support" + QDir::separator() + "Tox")
            + QDir::separator();
@@ -777,9 +784,11 @@ QString Settings::getAppDataDirPath() const
      * For now we need support Qt 5.3, so we use deprecated DataLocation
      * BTW, it's not a big deal since for linux AppDataLocation and DataLocation are equal
      */
-    return QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::DataLocation))
+    auto retVal = QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::DataLocation))
            + QDir::separator();
 #endif
+    qDebug() << "Settings::getAppDataDirPath returning: " << retVal;
+    return retVal;
 }
 
 /**
@@ -794,19 +803,21 @@ QString Settings::getAppCacheDirPath() const
 
 // workaround for https://bugreports.qt-project.org/browse/QTBUG-38845
 #ifdef Q_OS_WIN
-    return QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
+    auto retVal = QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
                            + QDir::separator() + "AppData" + QDir::separator() + "Roaming"
                            + QDir::separator() + "tox")
            + QDir::separator();
 #elif defined(Q_OS_OSX)
-    return QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
+    auto retVal = QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
                            + QDir::separator() + "Library" + QDir::separator()
                            + "Application Support" + QDir::separator() + "Tox")
            + QDir::separator();
 #else
-    return QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::CacheLocation))
+    auto retVal = QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::CacheLocation))
            + QDir::separator();
 #endif
+    qDebug() << "Settings::getAppCacheDirPath returning: " << retVal;
+    return retVal;
 }
 
 const QList<DhtServer>& Settings::getDhtServerList() const

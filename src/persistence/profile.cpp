@@ -106,9 +106,12 @@ Profile* Profile::loadProfile(QString name, const QString& password)
     Profile* p = nullptr;
     qint64 fileSize = 0;
 
-    QString path = Settings::getInstance().getSettingsDirPath() + name + ".tox";
+    QDir settingsDir = Settings::getInstance().getSettingsDirPath();
+    QString path = settingsDir.absoluteFilePath(name + ".tox");
     QFile saveFile(path);
     qDebug() << "Loading tox save " << path;
+    qDebug() << "Filename:" << saveFile.fileName();
+    qDebug() << "symlink target:" << saveFile.symLinkTarget();
 
     if (!saveFile.exists()) {
         qWarning() << "The tox save file " << path << " was not found";
@@ -374,8 +377,10 @@ QString Profile::avatarPath(const ToxPk& owner, bool forceUnencrypted)
     QByteArray hash(hashSize, 0);
     crypto_generichash((uint8_t*)hash.data(), hashSize, (uint8_t*)idData.data(), idData.size(),
                        (uint8_t*)pubkeyData.data(), pubkeyData.size());
-    return Settings::getInstance().getSettingsDirPath() + "avatars/" + hash.toHex().toUpper()
-           + ".png";
+    auto retVal = Settings::getInstance().getSettingsDirPath() + "avatars/" + hash.toHex().toUpper()
+                   + ".png";
+    qDebug() << "Profile::avatarPath returning: " << retVal;
+    return retVal;
 }
 
 /**
@@ -612,7 +617,12 @@ bool Profile::isEncrypted(QString name)
 {
     uint8_t data[TOX_PASS_ENCRYPTION_EXTRA_LENGTH] = {0};
     QString path = Settings::getInstance().getSettingsDirPath() + name + ".tox";
+    qDebug() << "name: " << name.toLatin1().data();
+    qDebug() << "Settings::getInstance().getSettingsDirPath(): " << Settings::getInstance().getSettingsDirPath().toLatin1().data();
+    qDebug() << "path: " << path.toLatin1().data();
     QFile saveFile(path);
+    qDebug() << "fileName: " << saveFile.fileName().toLatin1().data();
+    qDebug() << "symLinkTarget: " << saveFile.symLinkTarget().toLatin1().data();
     if (!saveFile.open(QIODevice::ReadOnly)) {
         qWarning() << "Couldn't open tox save " << path;
         return false;
