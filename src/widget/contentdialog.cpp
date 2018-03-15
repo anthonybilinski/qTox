@@ -159,13 +159,15 @@ ContentDialog::~ContentDialog()
     Translator::unregister(this);
 }
 
-FriendWidget* ContentDialog::addFriend(const Friend* frnd)
+FriendWidget* ContentDialog::addFriend(const Friend* frnd, GenericChatForm* form)
 {
     bool compact = Settings::getInstance().getCompactLayout();
     uint32_t friendId = frnd->getId();
     FriendWidget* friendWidget = new FriendWidget(frnd, compact);
     friendLayout->addFriendWidget(friendWidget, frnd->getStatus());
+    friendChatForms[friendId] = form;
 
+    // TODO(sudden6): move this connection to the Friend::displayedNameChanged signal
     connect(frnd, &Friend::aliasChanged, this, &ContentDialog::updateFriendWidget);
     connect(friendWidget, &FriendWidget::chatroomWidgetClicked, this, &ContentDialog::activate);
     connect(friendWidget, &FriendWidget::newWindowOpened, this, &ContentDialog::openNewDialog);
@@ -182,11 +184,14 @@ FriendWidget* ContentDialog::addFriend(const Friend* frnd)
     return friendWidget;
 }
 
-GroupWidget* ContentDialog::addGroup(int groupId, const QString& name)
+GroupWidget* ContentDialog::addGroup(const Group* g, GenericChatForm* form)
 {
-    bool compact = Settings::getInstance().getCompactLayout();
+    const auto groupId = g->getId();
+    const auto name = g->getName();
+    const auto compact = Settings::getInstance().getCompactLayout();
     GroupWidget* groupWidget = new GroupWidget(groupId, name, compact);
     groupLayout.addSortedWidget(groupWidget);
+    groupChatForms[groupId] = form;
 
     connect(groupWidget, &GroupWidget::chatroomWidgetClicked, this, &ContentDialog::activate);
     connect(groupWidget, &FriendWidget::newWindowOpened, this, &ContentDialog::openNewDialog);
@@ -716,11 +721,18 @@ void ContentDialog::activate(GenericChatroomWidget* widget)
 
     activeChatroomWidget = widget;
 
-    widget->setChatForm(contentLayout);
+    const FriendWidget* const friendWidget = qobject_cast<FriendWidget*>(widget);
+    if (friendWidget) {
+        auto friendId = friendWidget->getFriend()->getId();
+        friendChatForms[friendId]->show(contentLayout);
+    } else {
+        auto groupId = widget->getGroup()->getId();
+        groupChatForms[groupId]->show(contentLayout);
+    }
+
     widget->setAsActiveChatroom();
     widget->resetEventFlags();
     widget->updateStatusLight();
-
     updateTitleAndStatusIcon();
 }
 
@@ -734,7 +746,6 @@ void ContentDialog::updateFriendWidget(uint32_t friendId, QString alias)
     Friend* f = FriendList::findFriend(friendId);
     GenericChatroomWidget* widget = std::get<1>(friendList.find(friendId).value());
     FriendWidget* friendWidget = static_cast<FriendWidget*>(widget);
-    friendWidget->setName(alias);
 
     Status status = f->getStatus();
     friendLayout->addFriendWidget(friendWidget, status);

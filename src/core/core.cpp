@@ -110,12 +110,25 @@ CoreAV* Core::getAv()
     return av;
 }
 
+namespace {
+
+class ToxOptionsDeleter
+{
+public:
+    void operator()(Tox_Options* options)
+    {
+        tox_options_free(options);
+    }
+};
+
+using ToxOptionsPtr = std::unique_ptr<Tox_Options, ToxOptionsDeleter>;
+
 /**
  * @brief Initializes Tox_Options instance
  * @param savedata Previously saved Tox data
  * @return Tox_Options instance needed to create Tox instance
  */
-Tox_Options initToxOptions(const QByteArray& savedata, const ICoreSettings* s)
+ToxOptionsPtr initToxOptions(const QByteArray& savedata, const ICoreSettings* s)
 {
     // IPv6 needed for LAN discovery, but can crash some weird routers. On by default, can be
     // disabled in options.
@@ -132,19 +145,18 @@ Tox_Options initToxOptions(const QByteArray& savedata, const ICoreSettings* s)
         qWarning() << "Core starting with IPv6 disabled. LAN discovery may not work properly.";
     }
 
-    Tox_Options toxOptions;
-    tox_options_default(&toxOptions);
-    toxOptions.ipv6_enabled = enableIPv6;
-    toxOptions.udp_enabled = !forceTCP;
-    toxOptions.start_port = toxOptions.end_port = 0;
+    ToxOptionsPtr toxOptions = ToxOptionsPtr(tox_options_new(NULL));
+    tox_options_set_ipv6_enabled(toxOptions.get(), enableIPv6);
+    tox_options_set_udp_enabled(toxOptions.get(), !forceTCP);
+    tox_options_set_start_port(toxOptions.get(), 0);
+    tox_options_set_end_port(toxOptions.get(), 0);
 
     // No proxy by default
-    toxOptions.proxy_type = TOX_PROXY_TYPE_NONE;
-    toxOptions.proxy_host = nullptr;
-    toxOptions.proxy_port = 0;
-    toxOptions.savedata_type = !savedata.isNull() ? TOX_SAVEDATA_TYPE_TOX_SAVE : TOX_SAVEDATA_TYPE_NONE;
-    toxOptions.savedata_data = reinterpret_cast<const uint8_t*>(savedata.data());
-    toxOptions.savedata_length = savedata.size();
+    tox_options_set_proxy_type(toxOptions.get(), TOX_PROXY_TYPE_NONE);
+    tox_options_set_proxy_host(toxOptions.get(), nullptr);
+    tox_options_set_proxy_port(toxOptions.get(), 0);
+    tox_options_set_savedata_type(toxOptions.get(), !savedata.isNull() ? TOX_SAVEDATA_TYPE_TOX_SAVE : TOX_SAVEDATA_TYPE_NONE);
+    tox_options_set_savedata_data(toxOptions.get(), reinterpret_cast<const uint8_t*>(savedata.data()), savedata.size());
 
     if (proxyType != ICoreSettings::ProxyType::ptNone) {
         if (proxyAddr.length() > MAX_PROXY_ADDRESS_LENGTH) {
@@ -153,18 +165,20 @@ Tox_Options initToxOptions(const QByteArray& savedata, const ICoreSettings* s)
             qDebug() << "using proxy" << proxyAddr << ":" << proxyPort;
             // protection against changings in TOX_PROXY_TYPE enum
             if (proxyType == ICoreSettings::ProxyType::ptSOCKS5) {
-                toxOptions.proxy_type = TOX_PROXY_TYPE_SOCKS5;
+                tox_options_set_proxy_type(toxOptions.get(), TOX_PROXY_TYPE_SOCKS5);
             } else if (proxyType == ICoreSettings::ProxyType::ptHTTP) {
-                toxOptions.proxy_type = TOX_PROXY_TYPE_HTTP;
+                tox_options_set_proxy_type(toxOptions.get(), TOX_PROXY_TYPE_HTTP);
             }
 
-            toxOptions.proxy_host = proxyAddrData.data();
-            toxOptions.proxy_port = proxyPort;
+            tox_options_set_proxy_host(toxOptions.get(), proxyAddrData.data());
+            tox_options_set_proxy_port(toxOptions.get(), proxyPort);
         }
     }
 
     return toxOptions;
 }
+
+}  // namespace
 
 /**
  * @brief Creates Tox instance from previously saved data
@@ -172,9 +186,15 @@ Tox_Options initToxOptions(const QByteArray& savedata, const ICoreSettings* s)
  */
 void Core::makeTox(QByteArray savedata)
 {
-    Tox_Options toxOptions = initToxOptions(savedata, s);
+    ToxOptionsPtr toxOptions = initToxOptions(savedata, s);
+    if (toxOptions == nullptr) {
+        qCritical() << "could not allocate Tox Options data structure";
+        emit failedToStart();
+        return;
+    }
+
     TOX_ERR_NEW tox_err;
-    tox = tox_new(&toxOptions, &tox_err);
+    tox = tox_new(toxOptions.get(), &tox_err);
 
     switch (tox_err) {
     case TOX_ERR_NEW_OK:
@@ -187,8 +207,8 @@ void Core::makeTox(QByteArray savedata)
 
     case TOX_ERR_NEW_PORT_ALLOC:
         if (s->getEnableIPv6()) {
-            toxOptions.ipv6_enabled = false;
-            tox = tox_new(&toxOptions, &tox_err);
+            tox_options_set_ipv6_enabled(toxOptions.get(), false);
+            tox = tox_new(toxOptions.get(), &tox_err);
             if (tox_err == TOX_ERR_NEW_OK) {
                 qWarning() << "Core failed to start with IPv6, falling back to IPv4. LAN discovery "
                               "may not work properly.";
@@ -235,26 +255,6 @@ void Core::makeTox(QByteArray savedata)
 }
 
 /**
- * @brief Creates CoreAv instance. Should be called after makeTox method
- */
-void Core::makeAv()
-{
-    if (!tox) {
-        qCritical() << "No Tox instance, can't create ToxAV";
-        return;
-    }
-    av = new CoreAV(tox);
-    if (!av->getToxAv()) {
-        qCritical() << "Toxav core failed to start";
-        emit failedToStart();
-    }
-    for (const auto& callback : toCallWhenAvReady) {
-        callback(av);
-    }
-    toCallWhenAvReady.clear();
-}
-
-/**
  * @brief Initializes the core, must be called before anything else
  */
 void Core::start(const QByteArray& savedata)
@@ -263,7 +263,6 @@ void Core::start(const QByteArray& savedata)
     if (isNewProfile) {
         qDebug() << "Creating a new profile";
         makeTox(QByteArray());
-        makeAv();
         setStatusMessage(tr("Toxing on qTox"));
         setUsername(profile.getName());
     } else {
@@ -274,13 +273,21 @@ void Core::start(const QByteArray& savedata)
         }
 
         makeTox(savedata);
-        makeAv();
     }
 
     qsrand(time(nullptr));
     if (!tox) {
         ready = true;
         GUI::setEnabled(true);
+        return;
+    }
+
+    // toxcore is successfully created, create toxav
+    av = new CoreAV(tox);
+    if (!av->getToxAv()) {
+        qCritical() << "Toxav failed to start";
+        emit failedToStart();
+        deadifyTox();
         return;
     }
 
@@ -313,7 +320,12 @@ void Core::start(const QByteArray& savedata)
     tox_callback_friend_read_receipt(tox, onReadReceiptCallback);
     tox_callback_conference_invite(tox, onGroupInvite);
     tox_callback_conference_message(tox, onGroupMessage);
+#if TOX_VERSION_IS_API_COMPATIBLE(0, 2, 0)
+    tox_callback_conference_peer_list_changed(tox, onGroupPeerListChange);
+    tox_callback_conference_peer_name(tox, onGroupPeerNameChange);
+#else
     tox_callback_conference_namelist_change(tox, onGroupNamelistChange);
+#endif
     tox_callback_conference_title(tox, onGroupTitleChange);
     tox_callback_file_chunk_request(tox, CoreFile::onFileDataCallback);
     tox_callback_file_recv(tox, CoreFile::onFileReceiveCallback);
@@ -332,6 +344,7 @@ void Core::start(const QByteArray& savedata)
 
     process(); // starts its own timer
     av->start();
+    emit avReady();
 }
 
 /* Using the now commented out statements in checkConnection(), I watched how
@@ -495,7 +508,7 @@ void Core::onConnectionStatusChanged(Tox*, uint32_t friendId, TOX_CONNECTION sta
     }
 }
 
-void Core::onGroupInvite(Tox*, uint32_t friendId, TOX_CONFERENCE_TYPE type, const uint8_t* cookie,
+void Core::onGroupInvite(Tox* tox, uint32_t friendId, TOX_CONFERENCE_TYPE type, const uint8_t* cookie,
                          size_t length, void* vCore)
 {
     Core* core = static_cast<Core*>(vCore);
@@ -505,11 +518,22 @@ void Core::onGroupInvite(Tox*, uint32_t friendId, TOX_CONFERENCE_TYPE type, cons
     switch (type) {
     case TOX_CONFERENCE_TYPE_TEXT:
         qDebug() << QString("Text group invite by %1").arg(friendId);
+        if (friendId == UINT32_MAX) {
+            // Rejoining existing (persistent) conference after disconnect and reconnect.
+            tox_conference_join(tox, friendId, cookie, length, nullptr);
+            return;
+        }
         emit core->groupInviteReceived(inviteInfo);
         break;
 
     case TOX_CONFERENCE_TYPE_AV:
         qDebug() << QString("AV group invite by %1").arg(friendId);
+        if (friendId == UINT32_MAX) {
+            // Rejoining existing (persistent) AV conference after disconnect and reconnect.
+            toxav_join_av_groupchat(tox, friendId, cookie, length,
+                                    CoreAV::groupCallCallback, core);
+            return;
+        }
         emit core->groupInviteReceived(inviteInfo);
         break;
 
@@ -527,17 +551,41 @@ void Core::onGroupMessage(Tox*, uint32_t groupId, uint32_t peerId, TOX_MESSAGE_T
     emit core->groupMessageReceived(groupId, peerId, message, isAction);
 }
 
+#if TOX_VERSION_IS_API_COMPATIBLE(0, 2, 0)
+void Core::onGroupPeerListChange(Tox*, uint32_t groupId, void* core)
+{
+    const auto coreAv = static_cast<Core*>(core)->getAv();
+    if (coreAv->isGroupAvEnabled(groupId)) {
+        CoreAV::invalidateGroupCallSources(groupId);
+    }
+
+    qDebug() << QString("Group %1 peerlist changed").arg(groupId);
+    emit static_cast<Core*>(core)->groupPeerlistChanged(groupId);
+}
+
+void Core::onGroupPeerNameChange(Tox*, uint32_t groupId, uint32_t peerId,
+                            const uint8_t* name, size_t length, void* core)
+{
+    const auto newName = ToxString(name, length).getQString();
+    qDebug() << QString("Group %1, Peer %2, name changed to %3").arg(groupId).arg(peerId).arg(newName);
+    emit static_cast<Core*>(core)->groupPeerNameChanged(groupId, peerId, newName);
+}
+
+#else
+// for toxcore < 0.2.0, aka old groups
 void Core::onGroupNamelistChange(Tox*, uint32_t groupId, uint32_t peerId,
                                  TOX_CONFERENCE_STATE_CHANGE change, void* core)
 {
     CoreAV* coreAv = static_cast<Core*>(core)->getAv();
-    if (change == TOX_CONFERENCE_STATE_CHANGE_PEER_EXIT && coreAv->isGroupAvEnabled(groupId)) {
+	const auto changed = change == TOX_CONFERENCE_STATE_CHANGE_PEER_EXIT;
+    if (changed && coreAv->isGroupAvEnabled(groupId)) {
         CoreAV::invalidateGroupCallPeerSource(groupId, peerId);
     }
 
     qDebug() << QString("Group namelist change %1:%2 %3").arg(groupId).arg(peerId).arg(change);
     emit static_cast<Core*>(core)->groupNamelistChanged(groupId, peerId, change);
 }
+#endif
 
 void Core::onGroupTitleChange(Tox*, uint32_t groupId, uint32_t peerId, const uint8_t* cTitle,
                               size_t length, void* vCore)
@@ -1383,11 +1431,6 @@ QString Core::getPeerName(const ToxPk& id) const
 bool Core::isReady() const
 {
     return av && av->getToxAv() && tox && ready;
-}
-
-void Core::callWhenAvReady(std::function<void(CoreAV* av)>&& toCall)
-{
-    toCallWhenAvReady.emplace_back(std::move(toCall));
 }
 
 /**

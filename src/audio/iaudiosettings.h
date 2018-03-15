@@ -4,6 +4,7 @@
 #include "src/model/interface.h"
 
 #include <QString>
+#include <QList>
 
 class IAudioSettings {
 public:
@@ -28,6 +29,12 @@ public:
     virtual int getOutVolume() const = 0;
     virtual void setOutVolume(int volume) = 0;
 
+    virtual int getAudioCaptureMode() const = 0;
+    virtual void setAudioCaptureMode(int mode) = 0;
+    
+    virtual QList<int> getPttShortcutKeys() const = 0;
+    virtual void setPttShortcutKeys(QList<int> keys) = 0;
+    
     virtual int getAudioBitrate() const = 0;
     virtual void setAudioBitrate(int bitrate) = 0;
 
@@ -46,6 +53,8 @@ public:
     DECLARE_SIGNAL(audioInGainDecibelChanged, qreal dB);
     DECLARE_SIGNAL(audioThresholdChanged, qreal dB);
     DECLARE_SIGNAL(outVolumeChanged, int volume);
+    DECLARE_SIGNAL(audioCaptureModeChanged, int mode);
+    DECLARE_SIGNAL(pttShortcutKeysChanged, QList<int> keys);
     DECLARE_SIGNAL(audioBitrateChanged, int bitrate);
     DECLARE_SIGNAL(enableTestSoundChanged, bool newValue);
     DECLARE_SIGNAL(enableBackend2Changed, bool enabled);

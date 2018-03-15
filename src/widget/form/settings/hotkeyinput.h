@@ -1,5 +1,5 @@
 /*
-    Copyright © 2015 by The qTox Project Contributors
+    Copyright © 2014-2015 by The qTox Project Contributors
 
     This file is part of qTox, a Qt-based graphical interface for Tox.
 
@@ -17,40 +17,22 @@
     along with qTox.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef HOTKEYINPUT_H
+#define HOTKEYINPUT_H
 
-#ifndef COREVIDEOSOURCE_H
-#define COREVIDEOSOURCE_H
+#include <QLineEdit>
 
-#include "videosource.h"
-#include <QMutex>
-#include <atomic>
-#include <vpx/vpx_image.h>
-
-class CoreVideoSource : public VideoSource
+class HotkeyInput : public QLineEdit
 {
     Q_OBJECT
 public:
-    // VideoSource interface
-    virtual void subscribe() override;
-    virtual void unsubscribe() override;
+    explicit HotkeyInput(QWidget* parent = 0);
 
-private:
-    CoreVideoSource();
-
-    void pushFrame(const vpx_image_t* frame);
-    void setDeleteOnClose(bool newstate);
-
-    void stopSource();
-    void restartSource();
-
-private:
-    std::atomic_int subscribers;
-    std::atomic_bool deleteOnClose;
-    QMutex biglock;
-    std::atomic_bool stopped;
-
-    friend class CoreAV;
-    friend class ToxFriendCall;
+protected:
+    virtual void keyPressEvent(QKeyEvent* event) final override;
+    virtual void keyReleaseEvent(QKeyEvent* event) final override;
+    virtual void focusInEvent(QFocusEvent* event) final override;
+    virtual void focusOutEvent(QFocusEvent* event) final override;
 };
 
-#endif // COREVIDEOSOURCE_H
+#endif // HOTKEYINPUT_H

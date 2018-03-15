@@ -267,6 +267,16 @@ void Settings::loadGlobal()
         audioInGainDecibel = s.value("inGain", 0).toReal();
         audioThreshold = s.value("audioThreshold", 0).toReal();
         outVolume = s.value("outVolume", 100).toInt();
+        audioCaptureMode = s.value("audioCaptureMode", 0).toInt();
+
+        int pttShortcutKeysSize = s.beginReadArray("pttShortcutKeys");
+        for (int i = 0; i < pttShortcutKeysSize; i++) {
+            s.setArrayIndex(i);
+            const int key = s.value("pttKey" + QString::number(i), 0).toInt();
+            pttShortcutKeys << key;
+        }
+        s.endArray();
+
         audioBitrate = s.value("audioBitrate", 64).toInt();
         enableBackend2 = false;
         #ifdef USE_FILTERAUDIO
@@ -571,6 +581,15 @@ void Settings::saveGlobal()
         s.setValue("inGain", audioInGainDecibel);
         s.setValue("audioThreshold", audioThreshold);
         s.setValue("outVolume", outVolume);
+        s.setValue("audioCaptureMode", audioCaptureMode);
+
+	s.beginWriteArray("pttShortcutKeys", pttShortcutKeys.size());
+        for (int i = 0; i < pttShortcutKeys.size(); i++) {
+            s.setArrayIndex(i);
+            s.setValue("pttKey" + QString::number(i), pttShortcutKeys[i]);
+        }
+        s.endArray();
+
         s.setValue("audioBitrate", audioBitrate);
         s.setValue("enableBackend2", enableBackend2);
     }
@@ -1901,6 +1920,38 @@ void Settings::setOutVolume(int volume)
     if (volume != outVolume) {
         outVolume = volume;
         emit outVolumeChanged(outVolume);
+    }
+}
+
+int Settings::getAudioCaptureMode() const
+{
+    const QMutexLocker locker{&bigLock};
+    return audioCaptureMode;
+}
+
+void Settings::setAudioCaptureMode(int mode)
+{
+    const QMutexLocker locker{&bigLock};
+
+    if (mode != audioCaptureMode) {
+        audioCaptureMode = mode;
+        emit audioCaptureModeChanged(mode);
+    }
+}
+
+QList<int> Settings::getPttShortcutKeys() const
+{
+    const QMutexLocker locker{&bigLock};
+    return pttShortcutKeys;
+}
+
+void Settings::setPttShortcutKeys(QList<int> keys)
+{
+    const QMutexLocker locker{&bigLock};
+
+    if (keys != pttShortcutKeys) {
+        pttShortcutKeys = keys;
+        emit pttShortcutKeysChanged(pttShortcutKeys);
     }
 }
 

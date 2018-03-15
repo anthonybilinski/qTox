@@ -25,6 +25,7 @@
 #include <QObject>
 #include <atomic>
 #include <memory>
+#include <tox/tox.h> // for TOX_VERSION_IS_API_COMPATIBLE macro
 #include <tox/toxav.h>
 
 class Friend;
@@ -76,10 +77,15 @@ public:
     bool isCallOutputMuted(const Friend* f) const;
     void toggleMuteCallInput(const Friend* f);
     void toggleMuteCallOutput(const Friend* f);
-
+#if TOX_VERSION_IS_API_COMPATIBLE(0, 2, 0)
+    static void groupCallCallback(void* tox, uint32_t group, uint32_t peer, const int16_t* data, unsigned samples,
+                                  uint8_t channels, uint32_t sample_rate, void* core);
+#else
     static void groupCallCallback(void* tox, int group, int peer, const int16_t* data, unsigned samples,
                                   uint8_t channels, unsigned sample_rate, void* core);
+#endif
     static void invalidateGroupCallPeerSource(int group, int peer);
+    static void invalidateGroupCallSources(int group);
 
 public slots:
     bool startCall(uint32_t friendNum, bool video);
@@ -99,6 +105,8 @@ private slots:
     static void stateCallback(ToxAV*, uint32_t friendNum, uint32_t state, void* self);
     static void bitrateCallback(ToxAV* toxAV, uint32_t friendNum, uint32_t arate, uint32_t vrate,
                                 void* self);
+    static void audioBitrateCallback(ToxAV* toxAV, uint32_t friendNum, uint32_t rate, void* self);
+    static void videoBitrateCallback(ToxAV* toxAV, uint32_t friendNum, uint32_t rate, void* self);
     void killTimerFromThread();
 
 private:

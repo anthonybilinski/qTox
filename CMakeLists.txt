@@ -341,6 +341,8 @@ set(${PROJECT_NAME}_SOURCES
   src/widget/emoticonswidget.h
   src/widget/flowlayout.cpp
   src/widget/flowlayout.h
+  src/widget/searchform.cpp
+  src/widget/searchform.h
   src/widget/form/addfriendform.cpp
   src/widget/form/addfriendform.h
   src/widget/form/chatform.cpp
@@ -371,6 +373,8 @@ set(${PROJECT_NAME}_SOURCES
   src/widget/form/settings/generalform.h
   src/widget/form/settings/genericsettings.cpp
   src/widget/form/settings/genericsettings.h
+  src/widget/form/settings/hotkeyinput.cpp
+  src/widget/form/settings/hotkeyinput.h
   src/widget/form/settings/privacyform.cpp
   src/widget/form/settings/privacyform.h
   src/widget/form/settings/userinterfaceform.h

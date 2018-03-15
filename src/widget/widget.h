@@ -52,6 +52,7 @@ class FriendListWidget;
 class FriendWidget;
 class GenericChatroomWidget;
 class Group;
+class GroupChatForm;
 class GroupInvite;
 class GroupInviteForm;
 class GroupWidget;
@@ -158,6 +159,7 @@ public slots:
     void addFriendFailed(const ToxPk& userId, const QString& errorInfo = QString());
     void onFriendStatusChanged(int friendId, Status status);
     void onFriendStatusMessageChanged(int friendId, const QString& message);
+    void onFriendDisplayedNameChanged(const QString& displayed);
     void onFriendUsernameChanged(int friendId, const QString& username);
     void onFriendAliasChanged(uint32_t friendId, const QString& alias);
     void onFriendMessageReceived(int friendId, const QString& message, bool isAction);
@@ -169,7 +171,9 @@ public slots:
     void onGroupInviteReceived(const GroupInvite& inviteInfo);
     void onGroupInviteAccepted(const GroupInvite& inviteInfo);
     void onGroupMessageReceived(int groupnumber, int peernumber, const QString& message, bool isAction);
-    void onGroupNamelistChanged(int groupnumber, int peernumber, uint8_t change);
+    void onGroupNamelistChangedOld(int groupnumber, int peernumber, uint8_t change);
+    void onGroupPeerlistChanged(int groupnumber);
+    void onGroupPeerNameChanged(int groupnumber, int peernumber, const QString& newName);
     void onGroupTitleChanged(int groupnumber, const QString& author, const QString& title);
     void onGroupPeerAudioPlaying(int groupnumber, int peernumber);
     void onGroupSendFailed(int groupId);
@@ -220,8 +224,7 @@ private slots:
     void outgoingNotification();
     void incomingNotification(uint32_t friendId);
     void onRejectCall(uint32_t friendId);
-    void onAcceptCall(uint32_t friendId);
-    void onCallEnd(uint32_t friendId);
+    void onStopNotification();
 
 private:
     // QMainWindow overrides
@@ -309,6 +312,7 @@ private:
     QMap<uint32_t, GroupWidget*> groupWidgets;
     QMap<uint32_t, FriendWidget*> friendWidgets;
     QMap<uint32_t, ChatForm*> chatForms;
+    QMap<uint32_t, GroupChatForm*> groupChatForms;
 
 #ifdef Q_OS_MAC
     QAction* fileMenu;

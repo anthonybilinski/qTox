@@ -183,7 +183,7 @@ void GroupWidget::updateStatusLight()
         statusPic.setMargin(3);
     } else {
         statusPic.setPixmap(QPixmap(":img/status/online_notification.svg"));
-        statusPic.setMargin(0);
+        statusPic.setMargin(1);
     }
 }
 
@@ -205,12 +205,6 @@ void GroupWidget::editName()
 Group* GroupWidget::getGroup() const
 {
     return GroupList::findGroup(groupId);
-}
-
-void GroupWidget::setChatForm(ContentLayout* contentLayout)
-{
-    Group* g = GroupList::findGroup(groupId);
-    g->getChatForm()->show(contentLayout);
 }
 
 void GroupWidget::resetEventFlags()

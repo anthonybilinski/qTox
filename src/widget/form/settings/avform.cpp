@@ -96,6 +96,8 @@ AVForm::AVForm(Audio* audio, CoreAV* coreAV, CameraSource& camera,
     volumeDisplay->setMinimum(audio->minInputThreshold() * 1000);
     volumeDisplay->setMaximum(audio->maxInputThreshold() * 1000);
 
+    fillCaptureModeComboBox();
+    showPttShortcutKeys();
     fillAudioQualityComboBox();
 
     eventsInit();
@@ -530,6 +532,67 @@ void AVForm::on_inDevCombobox_currentIndexChanged(int deviceIndex)
     audio->reinitInput(deviceName);
     microphoneSlider->setEnabled(deviceIndex > 0);
     microphoneSlider->setSliderPosition(qRound(audio->inputGain() * 10.0));
+}
+
+void AVForm::fillCaptureModeComboBox()
+{
+    const bool previouslyBlocked = inModeComboBox->blockSignals(true);
+
+    inModeComboBox->addItem(tr("Continuous transmission"), 0);
+    inModeComboBox->addItem(tr("Voice activation"), 1);
+    inModeComboBox->addItem(tr("Push to talk"), 2);
+
+    const int mode = audioSettings->getAudioCaptureMode();
+    const int index = inModeComboBox->findData(mode);
+
+    updateCaptureModeUI(mode);
+    inModeComboBox->setCurrentIndex(index);
+    inModeComboBox->blockSignals(previouslyBlocked);
+}
+
+void AVForm::showPttShortcutKeys()
+{
+    const bool previouslyBlocked = pushToTalkShortcutInput->blockSignals(true);
+    const QList<int> keys = audioSettings->getPttShortcutKeys();
+
+    QString keyString = "";
+    for (int i = 0; i < keys.length(); i++) {
+        keyString += QString::number(keys[i]) + "+";
+    }
+
+    keyString.replace(QRegExp("[+]+$"), "");
+    pushToTalkShortcutInput->setText(keyString);
+    pushToTalkShortcutInput->blockSignals(previouslyBlocked);
+}
+
+void AVForm::updateCaptureModeUI(int mode)
+{
+    audioThresholdLabel->hide();
+    audioThresholdSlider->hide();
+    pushToTalkShortcutLabel->hide();
+    pushToTalkShortcutInput->hide();
+    
+    switch (mode) {
+        case 0:
+            break;
+        case 1:
+            audioThresholdLabel->show();
+            audioThresholdSlider->show();
+            break;
+        case 2:
+            pushToTalkShortcutLabel->show();
+            pushToTalkShortcutInput->show();
+            break;
+        default:
+            break;
+    }
+}
+
+void AVForm::on_inModeComboBox_currentIndexChanged(int index)
+{
+    const int mode = inModeComboBox->currentData().toInt(); 
+    audioSettings->setAudioCaptureMode(mode);
+    updateCaptureModeUI(mode);
 }
 
 void AVForm::on_outDevCombobox_currentIndexChanged(int deviceIndex)

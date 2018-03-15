@@ -96,7 +96,12 @@ CoreAV::CoreAV(Tox* tox)
 
     toxav_callback_call(toxav, CoreAV::callCallback, this);
     toxav_callback_call_state(toxav, CoreAV::stateCallback, this);
+#if TOX_VERSION_IS_API_COMPATIBLE(0, 2, 0)
+    toxav_callback_audio_bit_rate(toxav, CoreAV::audioBitrateCallback, this);
+    toxav_callback_video_bit_rate(toxav, CoreAV::videoBitrateCallback, this);
+#else
     toxav_callback_bit_rate_status(toxav, CoreAV::bitrateCallback, this);
+#endif
     toxav_callback_audio_receive_frame(toxav, CoreAV::audioFrameCallback, this);
     toxav_callback_video_receive_frame(toxav, CoreAV::videoFrameCallback, this);
 
@@ -386,7 +391,11 @@ void CoreAV::sendCallVideo(uint32_t callId, std::shared_ptr<VideoFrame> vframe)
 
     if (call.getNullVideoBitrate()) {
         qDebug() << "Restarting video stream to friend" << callId;
+#if TOX_VERSION_IS_API_COMPATIBLE(0, 2, 0)
+        toxav_video_set_bit_rate(toxav, callId, VIDEO_DEFAULT_BITRATE, nullptr);
+#else
         toxav_bit_rate_set(toxav, callId, -1, VIDEO_DEFAULT_BITRATE, nullptr);
+#endif
         call.setNullVideoBitrate(false);
     }
 
@@ -452,6 +461,36 @@ void CoreAV::toggleMuteCallOutput(const Friend* f)
  * @param[in] sample_rate  the audio sample rate
  * @param[in] core         the qTox Core class
  */
+#if TOX_VERSION_IS_API_COMPATIBLE(0, 2, 0)
+void CoreAV::groupCallCallback(void* tox, uint32_t group, uint32_t peer, const int16_t* data,
+                               unsigned samples, uint8_t channels, uint32_t sample_rate, void* core)
+{
+    Q_UNUSED(tox);
+
+    Core* c = static_cast<Core*>(core);
+    CoreAV* cav = c->getAv();
+
+    if (cav->groupCalls.find(group) == cav->groupCalls.end()) {
+        return;
+    }
+
+    ToxGroupCall& call = cav->groupCalls[group];
+
+    emit c->groupPeerAudioPlaying(group, peer);
+
+    if (call.getMuteVol() || !call.isActive()) {
+        return;
+    }
+
+    Audio& audio = Audio::getInstance();
+    if (!call.getPeers()[peer]) {
+        // FIXME: 0 is a valid sourceId, we shouldn't necessarily re-subscribe just because we have 0
+        audio.subscribeOutput(call.getPeers()[peer]);
+    }
+
+    audio.playAudioBuffer(call.getPeers()[peer], data, samples, channels, sample_rate);
+}
+#else
 void CoreAV::groupCallCallback(void* tox, int group, int peer, const int16_t* data,
                                unsigned samples, uint8_t channels, unsigned sample_rate, void* core)
 {
@@ -480,6 +519,7 @@ void CoreAV::groupCallCallback(void* tox, int group, int peer, const int16_t* da
 
     audio.playAudioBuffer(call.getPeers()[peer], data, samples, channels, sample_rate);
 }
+#endif
 
 /**
  * @brief Called from core to make sure the source for that peer is invalidated when they leave.
@@ -491,6 +531,16 @@ void CoreAV::invalidateGroupCallPeerSource(int group, int peer)
     Audio& audio = Audio::getInstance();
     audio.unsubscribeOutput(groupCalls[group].getPeers()[peer]);
     groupCalls[group].getPeers()[peer] = 0;
+}
+
+/**
+ * @brief Called from core to make sure the sources for that group are invalidated when
+ *        the peer list changes.
+ * @param group Group Index
+ */
+void CoreAV::invalidateGroupCallSources(int group)
+{
+    groupCalls.erase(group);
 }
 
 /**
@@ -683,7 +733,11 @@ void CoreAV::sendNoVideo()
     qDebug() << "CoreAV: Signaling end of video sending";
     for (auto& kv : calls) {
         ToxFriendCall& call = kv.second;
+#if TOX_VERSION_IS_API_COMPATIBLE(0, 2, 0)
+        toxav_video_set_bit_rate(toxav, kv.first, 0, nullptr);
+#else
         toxav_bit_rate_set(toxav, kv.first, -1, 0, nullptr);
+#endif
         call.setNullVideoBitrate(true);
     }
 }
@@ -813,6 +867,36 @@ void CoreAV::bitrateCallback(ToxAV* toxav, uint32_t friendNum, uint32_t arate, u
     }
 
     qDebug() << "Recommended bitrate with" << friendNum << " is now " << arate << "/" << vrate
+             << ", ignoring it";
+}
+
+void CoreAV::audioBitrateCallback(ToxAV* toxav, uint32_t friendNum, uint32_t rate, void* vSelf)
+{
+    CoreAV* self = static_cast<CoreAV*>(vSelf);
+
+    // Run this slow path callback asynchronously on the AV thread to avoid deadlocks
+    if (QThread::currentThread() != self->coreavThread.get()) {
+        return (void)QMetaObject::invokeMethod(self, "audioBitrateCallback", Qt::QueuedConnection,
+                                               Q_ARG(ToxAV*, toxav), Q_ARG(uint32_t, friendNum),
+                                               Q_ARG(uint32_t, rate), Q_ARG(void*, vSelf));
+    }
+
+    qDebug() << "Recommended audio bitrate with" << friendNum << " is now " << rate
+             << ", ignoring it";
+}
+
+void CoreAV::videoBitrateCallback(ToxAV* toxav, uint32_t friendNum, uint32_t rate, void* vSelf)
+{
+    CoreAV* self = static_cast<CoreAV*>(vSelf);
+
+    // Run this slow path callback asynchronously on the AV thread to avoid deadlocks
+    if (QThread::currentThread() != self->coreavThread.get()) {
+        return (void)QMetaObject::invokeMethod(self, "videoBitrateCallback", Qt::QueuedConnection,
+                                               Q_ARG(ToxAV*, toxav), Q_ARG(uint32_t, friendNum),
+                                               Q_ARG(uint32_t, rate), Q_ARG(void*, vSelf));
+    }
+
+    qDebug() << "Recommended video bitrate with" << friendNum << " is now " << rate
              << ", ignoring it";
 }
 
