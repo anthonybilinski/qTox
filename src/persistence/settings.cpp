@@ -2121,9 +2121,11 @@ void Settings::setFriendCircleID(const ToxPk& id, int circleID)
 QDate Settings::getFriendActivity(const ToxPk& id) const
 {
     auto it = friendLst.find(id.getKey());
-    if (it != friendLst.end())
+    if (it != friendLst.end()) {
+        qDebug() << "returning it->activity:" << it->activity.toString();
         return it->activity;
-
+    }
+    qDebug() << "returning QDate():" << QDate().toString();
     return QDate();
 }
 

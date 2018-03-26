@@ -218,16 +218,22 @@ void FriendListWidget::setMode(Mode mode)
         for (Time t : names.keys()) {
             CategoryWidget* category = new CategoryWidget(compact, this);
             category->setName(names[t]);
+            qDebug() << "adding widget" << names[t];
             activityLayout->addWidget(category);
         }
 
+        qDebug() << "moving offline";
         moveFriends(listLayout->getLayoutOffline());
+        qDebug() << "moving online";
         moveFriends(listLayout->getLayoutOnline());
+        qDebug() << "moving circles";
         moveFriends(circleLayout->getLayout());
 
         for (int i = 0; i < activityLayout->count(); ++i) {
+            qDebug() << "activityLayout->count():" << activityLayout->count();
             QWidget* widget = activityLayout->itemAt(i)->widget();
             CategoryWidget* categoryWidget = qobject_cast<CategoryWidget*>(widget);
+            qDebug() << "categoryWidget->getName()" << categoryWidget->getName() << "has chatrooms?" << categoryWidget->hasChatrooms();
             categoryWidget->setVisible(categoryWidget->hasChatrooms());
         }
 
@@ -254,20 +260,28 @@ void FriendListWidget::setMode(Mode mode)
 
 void FriendListWidget::moveFriends(QLayout* layout)
 {
-    for (int i = 0; i < layout->count(); i++) {
+    qDebug() << "moveFriends count:" << layout->count();
+    const int count = layout->count();
+    for (int i = count - 1; i >= 0; --i) {
+        qDebug() << "i is" << i << "layout->count() is" << layout->count();
         QWidget* widget = layout->itemAt(i)->widget();
         FriendWidget* friendWidget = qobject_cast<FriendWidget*>(widget);
         CircleWidget* circleWidget = qobject_cast<CircleWidget*>(widget);
         if (circleWidget) {
+            qDebug() << "moving circle:" << circleWidget->getName();
             circleWidget->moveFriendWidgets(this);
         } else if (friendWidget) {
             const Friend* contact = friendWidget->getFriend();
+            qDebug() << "moving friend:" << contact->getDisplayedName();
             QDate activityDate = getDateFriend(contact);
+            qDebug() << "activityDate:" << activityDate.toString();
             int time = static_cast<int>(getTime(activityDate));
 
             QWidget* w = activityLayout->itemAt(time)->widget();
             CategoryWidget* categoryWidget = qobject_cast<CategoryWidget*>(w);
             categoryWidget->addFriendWidget(friendWidget, contact->getStatus());
+        } else {
+            qDebug() << "not a friend nor a circle";
         }
     }
 }
