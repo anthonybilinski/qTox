@@ -640,6 +640,7 @@ void Widget::onFailedToStartCore()
 void Widget::onBadProxyCore()
 {
     Settings::getInstance().setProxyType(Settings::ProxyType::ptNone);
+    Settings::getInstance().savePersonal();
     QMessageBox critical(this);
     critical.setText(tr("toxcore failed to start with your proxy settings. "
                         "qTox cannot run; please modify your "

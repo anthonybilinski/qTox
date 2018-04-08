@@ -65,6 +65,7 @@ void Core::deadifyTox()
     }
 
     if (tox) {
+        qDebug() << "deadifyTox, killing and freeing tox";
         tox_kill(tox);
         tox = nullptr;
     }
@@ -88,7 +89,7 @@ Core::~Core()
             coreThread->wait(500);
         }
     }
-
+    qDebug() << "~Core, deadifyingTox";
     deadifyTox();
 }
 
@@ -192,6 +193,7 @@ ToxOptionsPtr initToxOptions(const QByteArray& savedata, const ICoreSettings* s)
  */
 void Core::makeTox(QByteArray savedata)
 {
+    this->savedata = savedata;
     ToxOptionsPtr toxOptions = initToxOptions(savedata, s);
     if (toxOptions == nullptr) {
         qCritical() << "could not allocate Tox Options data structure";
@@ -200,6 +202,7 @@ void Core::makeTox(QByteArray savedata)
     }
 
     TOX_ERR_NEW tox_err;
+    qDebug() << "making tox";
     tox = tox_new(toxOptions.get(), &tox_err);
 
     switch (tox_err) {
@@ -283,7 +286,7 @@ void Core::start(const QByteArray& savedata)
 
     qsrand(time(nullptr));
     if (!tox) {
-        ready = true;
+        ready = false;
         GUI::setEnabled(true);
         return;
     }
@@ -293,6 +296,7 @@ void Core::start(const QByteArray& savedata)
     if (!av->getToxAv()) {
         qCritical() << "Toxav failed to start";
         emit failedToStart();
+        qDebug() << "start, deadifyingTox";
         deadifyTox();
         return;
     }
@@ -1011,11 +1015,7 @@ void Core::setStatus(Status status)
  */
 QByteArray Core::getToxSaveData()
 {
-    uint32_t fileSize = tox_get_savedata_size(tox);
-    QByteArray data;
-    data.resize(fileSize);
-    tox_get_savedata(tox, (uint8_t*)data.data());
-    return data;
+    return savedata;
 }
 
 // Declared to avoid code duplication
@@ -1442,7 +1442,11 @@ QString Core::getPeerName(const ToxPk& id) const
  */
 bool Core::isReady() const
 {
-    return av && av->getToxAv() && tox && ready;
+    bool isReady = av && av->getToxAv() && tox && ready;
+    if (!isReady) {
+        qDebug() << "oh noes not ready";
+    }
+    return isReady;
 }
 
 /**
@@ -1481,6 +1485,7 @@ void Core::reset()
     QByteArray toxsave = getToxSaveData();
     ready = false;
     killTimers(true);
+    qDebug() << "reset, deadifyingTox";
     deadifyTox();
     GUI::clearContacts();
     start(toxsave);

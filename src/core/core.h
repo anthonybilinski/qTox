@@ -241,6 +241,7 @@ private:
     QTimer* toxTimer;
     Profile& profile;
     QMutex messageSendMutex;
+    QByteArray savedata;
     bool ready;
     const ICoreSettings* const s;
 

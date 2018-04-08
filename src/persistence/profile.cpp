@@ -69,7 +69,10 @@ Profile::Profile(QString name, const QString& password, bool isNewProfile, const
     core->moveToThread(coreThread);
     QObject::connect(coreThread, &QThread::started, core, [=]() {
         core->start(toxsave);
-
+        if (!core->isReady()) {
+            qCritical() << "Failed to construct core, cannot load profile.";
+            return;
+        }
         const ToxPk selfPk = core->getSelfPublicKey();
         QByteArray data = loadAvatarData(selfPk);
         if (data.isEmpty()) {
@@ -302,10 +305,11 @@ bool Profile::isNewProfile()
  */
 void Profile::saveToxSave()
 {
+    if (!core->isReady()) {
+        qDebug() << "wtf core not ready";
+    }
     assert(core->isReady());
-    QByteArray data = core->getToxSaveData();
-    assert(data.size());
-    saveToxSave(data);
+    saveToxSave(core->getToxSaveData());
 }
 
 /**
