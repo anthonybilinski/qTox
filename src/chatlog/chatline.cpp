@@ -23,18 +23,9 @@
 #include <QDebug>
 #include <QGraphicsScene>
 
-ChatLine::ChatLine()
-{
-}
-
 ChatLine::~ChatLine()
 {
-    for (ChatLineContent* c : content) {
-        if (c->scene())
-            c->scene()->removeItem(c);
-
-        delete c;
-    }
+	removeFromScene();
 }
 
 void ChatLine::setRow(int idx)
@@ -48,7 +39,7 @@ void ChatLine::setRow(int idx)
 void ChatLine::visibilityChanged(bool visible)
 {
     if (isVisible != visible) {
-        for (ChatLineContent* c : content)
+        for (auto& c : content)
             c->visibilityChanged(visible);
     }
 
@@ -63,16 +54,16 @@ int ChatLine::getRow() const
 ChatLineContent* ChatLine::getContent(int col) const
 {
     if (col < static_cast<int>(content.size()) && col >= 0)
-        return content[col];
+        return content[col].get();
 
     return nullptr;
 }
 
 ChatLineContent* ChatLine::getContent(QPointF scenePos) const
 {
-    for (ChatLineContent* c : content) {
+    for (auto& c : content) {
         if (c->sceneBoundingRect().contains(scenePos))
-            return c;
+            return c.get();
     }
 
     return nullptr;
@@ -80,9 +71,9 @@ ChatLineContent* ChatLine::getContent(QPointF scenePos) const
 
 void ChatLine::removeFromScene()
 {
-    for (ChatLineContent* c : content) {
+    for (auto& c : content) {
         if (c->scene())
-            c->scene()->removeItem(c);
+            c->scene()->removeItem(c.get());
     }
 }
 
@@ -91,31 +82,31 @@ void ChatLine::addToScene(QGraphicsScene* scene)
     if (!scene)
         return;
 
-    for (ChatLineContent* c : content)
-        scene->addItem(c);
+    for (auto& c : content)
+        scene->addItem(c.get());
 }
 
 void ChatLine::setVisible(bool visible)
 {
-    for (ChatLineContent* c : content)
+    for (auto& c : content)
         c->setVisible(visible);
 }
 
 void ChatLine::selectionCleared()
 {
-    for (ChatLineContent* c : content)
+    for (auto& c : content)
         c->selectionCleared();
 }
 
 void ChatLine::selectionFocusChanged(bool focusIn)
 {
-    for (ChatLineContent* c : content)
+    for (auto& c : content)
         c->selectionFocusChanged(focusIn);
 }
 
 void ChatLine::fontChanged(const QFont& font)
 {
-    for (ChatLineContent* c : content)
+    for (auto& c : content)
         c->fontChanged(font);
 }
 
@@ -129,7 +120,7 @@ void ChatLine::updateBBox()
     bbox.setHeight(0);
     bbox.setWidth(width);
 
-    for (ChatLineContent* c : content)
+    for (auto& c : content)
         bbox.setHeight(qMax(c->sceneBoundingRect().top() - bbox.top() + c->sceneBoundingRect().height(),
                             bbox.height()));
 }
@@ -145,20 +136,19 @@ void ChatLine::addColumn(ChatLineContent* item, ColumnFormat fmt)
         return;
 
     format.push_back(fmt);
-    content.push_back(item);
+    content.emplace_back(std::unique_ptr<ChatLineContent>(item));
 }
 
 void ChatLine::replaceContent(int col, ChatLineContent* lineContent)
 {
     if (col >= 0 && col < static_cast<int>(content.size()) && lineContent) {
         QGraphicsScene* scene = content[col]->scene();
-        delete content[col];
 
-        content[col] = lineContent;
+        content[col] = std::unique_ptr<ChatLineContent>(lineContent);
         lineContent->setIndex(row, col);
 
         if (scene)
-            scene->addItem(content[col]);
+            scene->addItem(content[col].get());
 
         layout(width, bbox.topLeft());
         content[col]->visibilityChanged(isVisible);
@@ -240,7 +230,7 @@ void ChatLine::layout(qreal w, QPointF scenePos)
 void ChatLine::moveBy(qreal deltaY)
 {
     // reposition only
-    for (ChatLineContent* c : content)
+    for (auto& c : content)
         c->moveBy(0, deltaY);
 
     bbox.moveTop(bbox.top() + deltaY);

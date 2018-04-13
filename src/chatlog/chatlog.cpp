@@ -449,7 +449,7 @@ void ChatLog::startResizeWorker()
     for (ChatLine::Ptr line : lines) {
         if (txt > 500000)
             break;
-        for (ChatLineContent* content : line->content)
+        for (auto& content : line->content)
             txt += content->getText().size();
     }
     if (txt > 500000)

@@ -68,7 +68,7 @@ class ChatLine
 public:
     using Ptr = std::shared_ptr<ChatLine>;
 
-    ChatLine();
+    ChatLine() = default;
     virtual ~ChatLine();
 
     QRectF sceneBoundingRect() const;
@@ -108,7 +108,7 @@ protected:
 
 private:
     int row = -1;
-    QVector<ChatLineContent*> content;
+    std::vector<std::unique_ptr<ChatLineContent>> content;
     QVector<ColumnFormat> format;
     qreal width = 100.0;
     qreal columnSpacing = 15.0;
