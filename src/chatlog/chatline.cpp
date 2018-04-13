@@ -143,11 +143,14 @@ void ChatLine::replaceContent(int col, ChatLineContent* lineContent)
     if (col >= 0 && col < static_cast<int>(content.size()) && lineContent) {
         QGraphicsScene* scene = content[col]->scene();
 
-        content[col] = std::unique_ptr<ChatLineContent>(lineContent);
+        auto old = std::unique_ptr<ChatLineContent>(lineContent);
+        old.swap(content[col]);
         lineContent->setIndex(row, col);
 
-        if (scene)
+        if (scene) {
+        	scene->removeItem(old.get());
             scene->addItem(content[col].get());
+        }
 
         layout(width, bbox.topLeft());
         content[col]->visibilityChanged(isVisible);
