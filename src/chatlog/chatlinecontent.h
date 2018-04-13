@@ -35,6 +35,7 @@ public:
         ChatLineContentType = QGraphicsItem::UserType + 1,
     };
 
+    virtual ~ChatLineContent() = default;
     int getColumn() const;
     int getRow() const;
 
