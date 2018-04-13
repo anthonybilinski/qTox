@@ -92,12 +92,13 @@ ChatMessage::Ptr ChatMessage::createChatMessage(const QString& sender, const QSt
                                                        ? QString("%1 %2").arg(sender, rawMessage)
                                                        : rawMessage),
                    ColumnFormat(1.0, ColumnFormat::VariableSize));
-    msg->addColumn(new Spinner(":/ui/chatArea/spinner.svg", QSize(16, 16), 360.0 / 1.6),
+    if (date.isNull()) {
+        msg->addColumn(new Spinner(":/ui/chatArea/spinner.svg", QSize(16, 16), 360.0 / 1.6),
                    ColumnFormat(TIME_COL_WIDTH, ColumnFormat::FixedSize, ColumnFormat::Right));
-
-    if (!date.isNull())
-        msg->markAsSent(date);
-
+    } else {
+        msg->addColumn(new Timestamp(date, Settings::getInstance().getTimestampFormat(), baseFont),
+                    ColumnFormat(TIME_COL_WIDTH, ColumnFormat::FixedSize, ColumnFormat::Right));
+    }
     return msg;
 }
 
