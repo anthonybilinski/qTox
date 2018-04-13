@@ -300,12 +300,12 @@ QString Text::getLinkAt(QPointF scenePos) const
 void Text::regenerate()
 {
     if (!doc) {
-        doc = std::unique_ptr<QTextDocument>(new QTextDocument());
+//        doc = std::unique_ptr<QTextDocument>(new QTextDocument());
         qDebug() << "creating new doc";
-        dirty = true;
+//        dirty = true;
     }
 
-    if (dirty) {
+    if (dirty && doc) {
         doc->setDefaultFont(defFont);
 
         if (elide) {
@@ -352,7 +352,6 @@ void Text::regenerate()
 
 void Text::freeResources()
 {
-	doc->clear();
     doc.reset();
 }
 
