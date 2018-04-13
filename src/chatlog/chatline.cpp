@@ -42,7 +42,6 @@ void ChatLine::visibilityChanged(bool visible)
         for (auto& c : content)
             c->visibilityChanged(visible);
     }
-
     isVisible = visible;
 }
 

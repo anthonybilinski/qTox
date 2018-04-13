@@ -125,10 +125,6 @@ ChatLog::~ChatLog()
 {
     Translator::unregister(this);
 
-    // Remove chatlines from scene
-    for (ChatLine::Ptr l : lines)
-        l->removeFromScene();
-
     if (busyNotification)
         busyNotification->removeFromScene();
 
@@ -560,8 +556,6 @@ void ChatLog::clear()
     for (ChatLine::Ptr l : lines) {
         if (isActiveFileTransfer(l))
             savedLines.push_back(l);
-        else
-            l->removeFromScene();
     }
 
     lines.clear();
