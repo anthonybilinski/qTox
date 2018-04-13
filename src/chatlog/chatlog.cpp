@@ -565,6 +565,7 @@ void ChatLog::clear()
     }
 
     lines.clear();
+    lines.squeeze();
     visibleLines.clear();
     for (ChatLine::Ptr l : savedLines)
         insertChatlineAtBottom(l);
