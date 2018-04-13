@@ -301,6 +301,7 @@ void Text::regenerate()
 {
     if (!doc) {
         doc = std::unique_ptr<QTextDocument>(new QTextDocument());
+        qDebug() << "creating new doc";
         dirty = true;
     }
 
@@ -314,7 +315,9 @@ void Text::regenerate()
             doc->setPlainText(elidedText);
         } else {
             doc->setDefaultStyleSheet(defStyleSheet);
-            doc->setHtml(text);
+//            for (int i = 0; i < 100; ++i) {
+			doc->setHtml(text);
+//            }
         }
 
         // wrap mode
@@ -341,12 +344,15 @@ void Text::regenerate()
     }
 
     // if we are not visible -> free mem
-    if (!keepInMemory)
-        freeResources();
+    if (!keepInMemory) {
+    	qDebug() << "NOT freeing doc";
+//        freeResources();
+    }
 }
 
 void Text::freeResources()
 {
+	doc->clear();
     doc.reset();
 }
 
