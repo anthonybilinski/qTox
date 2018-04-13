@@ -23,6 +23,7 @@
 #include "../chatlinecontent.h"
 
 #include <QFont>
+#include <memory>
 
 class QTextDocument;
 
@@ -33,7 +34,7 @@ class Text : public ChatLineContent
 public:
     Text(const QString& txt = "", const QFont& font = QFont(), bool enableElide = false,
          const QString& rawText = QString(), const QColor c = Qt::black);
-    virtual ~Text();
+    ~Text();
 
     void setText(const QString& txt);
     void selectText(const QString& txt, const int index);
@@ -78,7 +79,7 @@ protected:
     QString extractImgTooltip(int pos) const;
 
 private:
-    QTextDocument* doc = nullptr;
+    std::unique_ptr<QTextDocument> doc;
     QString text;
     QString rawText;
     QString selectedText;
