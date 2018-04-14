@@ -21,6 +21,7 @@
 #define CONTENTDIALOG_H
 
 #include <tuple>
+#include <memory>
 
 #include "src/widget/genericchatitemlayout.h"
 #include "src/widget/tool/activatedialog.h"
@@ -121,6 +122,8 @@ private:
     static ContentDialog* getDialog(int id, const QHash<int, ContactInfo>& list);
 
     QList<QLayout*> layouts;
+    std::shared_ptr<const QString> stylesheetContentDialog;
+    std::shared_ptr<const QString> stylesheetFriendList;
     QSplitter* splitter;
     FriendListLayout* friendLayout;
     GenericChatItemLayout groupLayout;

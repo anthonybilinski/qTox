@@ -97,6 +97,7 @@ private:
     MaskablePixmapWidget* avatar;
     QVBoxLayout* headTextLayout;
     CroppingLabel* nameLabel;
+    std::shared_ptr<const QString> stylesheet;
 
     QPushButton* callButton;
     QPushButton* videoButton;

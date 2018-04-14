@@ -88,6 +88,7 @@ private:
     QColor backgroundColor;
     QColor buttonColor;
     QColor buttonBackgroundColor;
+    std::shared_ptr<const QString> stylesheet;
 
     static const uint8_t TRANSFER_ROLLING_AVG_COUNT = 4;
     uint8_t meanIndex = 0;

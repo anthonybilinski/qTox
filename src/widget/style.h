@@ -22,6 +22,7 @@
 
 #include <QColor>
 #include <QFont>
+#include <memory>
 
 class QString;
 class QWidget;
@@ -59,10 +60,10 @@ public:
     };
 
     static QStringList getThemeColorNames();
-    static QString getStylesheet(const QString& filename, const QFont& baseFont = QFont());
+    static std::shared_ptr<const QString> getStylesheet(const QString& filename, QFont baseFont = QFont());
     static QColor getColor(ColorPalette entry);
     static QFont getFont(Font font);
-    static QString resolve(QString qss, const QFont& baseFont = QFont());
+    static std::shared_ptr<const QString> resolve(const QString& filename, QFont baseFont);
     static void repolish(QWidget* w);
     static void setThemeColor(int color);
     static void setThemeColor(const QColor& color);
@@ -70,6 +71,7 @@ public:
     static QPixmap scaleSvgImage(const QString& path, uint32_t width, uint32_t height);
 
     static QList<QColor> themeColorColors;
+    static std::map<std::pair<QString, QFont>, std::weak_ptr<const QString>> stylesheetsCache;
 
 signals:
     void themeChanged();
