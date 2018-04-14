@@ -497,8 +497,7 @@ void ChatForm::onSearchUp(const QString& phrase)
         disableSearchText();
     }
 
-    QVector<ChatLine::Ptr> lines = chatWidget->getLines();
-    int numLines = lines.size();
+    int numLines = chatWidget->getLines().size();
 
     int startLine = numLines - searchPoint.x();
 

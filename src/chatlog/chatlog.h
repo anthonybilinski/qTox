@@ -61,7 +61,7 @@ public:
     bool hasTextToBeCopied() const;
 
     ChatLine::Ptr getTypingNotification() const;
-    QVector<ChatLine::Ptr> getLines();
+    std::deque<ChatLine::Ptr> getLines();
     ChatLine::Ptr getLatestLine() const;
     ChatLineContent* getContentFromGlobalPos(QPoint pos) const;
     const uint repNameAfter = 5 * 60;

@@ -547,7 +547,7 @@ void GenericChatForm::addSystemDateMessage()
 void GenericChatForm::disableSearchText()
 {
     if (searchPoint != QPoint(1, -1)) {
-        QVector<ChatLine::Ptr> lines = chatWidget->getLines();
+        auto lines = chatWidget->getLines();
         int numLines = lines.size();
         int index = numLines - searchPoint.x();
         if (index >= 0 && numLines > index) {
@@ -569,9 +569,9 @@ bool GenericChatForm::searchInText(const QString& phrase, bool searchUp)
         disableSearchText();
     }
 
-    QVector<ChatLine::Ptr> lines = chatWidget->getLines();
+    auto lines = chatWidget->getLines();
 
-    if (lines.isEmpty()) {
+    if (lines.empty()) {
         return isSearch;
     }
 

@@ -387,26 +387,19 @@ void ChatLog::insertChatlineOnTop(const QList<ChatLine::Ptr>& newLines)
     QGraphicsScene::ItemIndexMethod oldIndexMeth = scene->itemIndexMethod();
     scene->setItemIndexMethod(QGraphicsScene::NoIndex);
 
-    // alloc space for old and new lines
-    QVector<ChatLine::Ptr> combLines;
-    combLines.reserve(newLines.size() + lines.size());
-
+    const int numNewLines = newLines.size();
+    // adjust the old lines row number
+    for (ChatLine::Ptr l : lines) {
+        l->setRow(l->row + numNewLines);
+    }
     // add the new lines
     int i = 0;
     for (ChatLine::Ptr l : newLines) {
         l->addToScene(scene);
         l->visibilityChanged(false);
         l->setRow(i++);
-        combLines.push_back(l);
+        lines.push_front(l);
     }
-
-    // add the old lines
-    for (ChatLine::Ptr l : lines) {
-        l->setRow(i++);
-        combLines.push_back(l);
-    }
-
-    lines = combLines;
 
     scene->setItemIndexMethod(oldIndexMeth);
 
@@ -524,7 +517,7 @@ ChatLine::Ptr ChatLog::getTypingNotification() const
     return typingNotification;
 }
 
-QVector<ChatLine::Ptr> ChatLog::getLines()
+std::deque<ChatLine::Ptr> ChatLog::getLines()
 {
     return lines;
 }
@@ -751,7 +744,7 @@ ChatLine::Ptr ChatLog::findLineByPosY(qreal yPos) const
 
 QRectF ChatLog::calculateSceneRect() const
 {
-    qreal bottom = (lines.empty() ? 0.0 : lines.end()->sceneBoundingRect().bottom());
+    qreal bottom = (lines.empty() ? 0.0 : lines.back()->sceneBoundingRect().bottom());
 
     if (typingNotification.get() != nullptr)
         bottom += typingNotification->sceneBoundingRect().height() + lineSpacing;
