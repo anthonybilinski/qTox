@@ -305,10 +305,10 @@ ChatLineContent* ChatLog::getContentFromPos(QPointF scenePos) const
         return nullptr;
 
     auto itr =
-        std::lower_bound(lines.cbegin(), lines.cend(), scenePos.y(), ChatLine::lessThanBSRectBottom);
+        std::lower_bound(lines.begin(), lines.end(), scenePos.y(), ChatLine::lessThanBSRectBottom);
 
     // find content
-    if (itr != lines.cend() && (*itr)->sceneBoundingRect().contains(scenePos))
+    if (itr != lines.end() && (*itr)->sceneBoundingRect().contains(scenePos))
         return (*itr)->getContent(scenePos);
 
     return nullptr;
@@ -336,7 +336,7 @@ qreal ChatLog::useableWidth() const
 
 void ChatLog::reposition(int start, int end, qreal deltaY)
 {
-    if (lines.isEmpty())
+    if (lines.empty())
         return;
 
     start = clamp<int>(start, 0, lines.size() - 1);
@@ -358,10 +358,10 @@ void ChatLog::insertChatlineAtBottom(ChatLine::Ptr l)
     // insert
     l->setRow(lines.size());
     l->addToScene(scene);
-    lines.append(l);
+    lines.push_back(l);
 
     // partial refresh
-    layout(lines.last()->getRow(), lines.size(), useableWidth());
+    layout(lines.back()->getRow(), lines.size(), useableWidth());
     updateSceneRect();
 
     if (stickToBtm)
@@ -511,7 +511,7 @@ QString ChatLog::getSelectedText() const
 
 bool ChatLog::isEmpty() const
 {
-    return lines.isEmpty();
+    return lines.empty();
 }
 
 bool ChatLog::hasTextToBeCopied() const
@@ -532,7 +532,7 @@ QVector<ChatLine::Ptr> ChatLog::getLines()
 ChatLine::Ptr ChatLog::getLatestLine() const
 {
     if (!lines.empty()) {
-        return lines.last();
+        return lines.back();
     }
     return nullptr;
 }
@@ -559,7 +559,6 @@ void ChatLog::clear()
     }
 
     lines.clear();
-    lines.squeeze();
     visibleLines.clear();
     for (ChatLine::Ptr l : savedLines)
         insertChatlineAtBottom(l);
@@ -645,11 +644,11 @@ void ChatLog::checkVisibility()
         return;
 
     // find first visible line
-    auto lowerBound = std::lower_bound(lines.cbegin(), lines.cend(), getVisibleRect().top(),
+    auto lowerBound = std::lower_bound(lines.begin(), lines.end(), getVisibleRect().top(),
                                        ChatLine::lessThanBSRectBottom);
 
     // find last visible line
-    auto upperBound = std::lower_bound(lowerBound, lines.cend(), getVisibleRect().bottom(),
+    auto upperBound = std::lower_bound(lowerBound, lines.end(), getVisibleRect().bottom(),
                                        ChatLine::lessThanBSRectTop);
 
     // set visibilty
@@ -726,7 +725,7 @@ void ChatLog::updateTypingNotification()
     qreal posY = 0.0;
 
     if (!lines.empty())
-        posY = lines.last()->sceneBoundingRect().bottom() + lineSpacing;
+        posY = lines.back()->sceneBoundingRect().bottom() + lineSpacing;
 
     notification->layout(useableWidth(), QPointF(0.0, posY));
 }
@@ -742,9 +741,9 @@ void ChatLog::updateBusyNotification()
 
 ChatLine::Ptr ChatLog::findLineByPosY(qreal yPos) const
 {
-    auto itr = std::lower_bound(lines.cbegin(), lines.cend(), yPos, ChatLine::lessThanBSRectBottom);
+    auto itr = std::lower_bound(lines.begin(), lines.end(), yPos, ChatLine::lessThanBSRectBottom);
 
-    if (itr != lines.cend())
+    if (itr != lines.end())
         return *itr;
 
     return ChatLine::Ptr();
@@ -752,7 +751,7 @@ ChatLine::Ptr ChatLog::findLineByPosY(qreal yPos) const
 
 QRectF ChatLog::calculateSceneRect() const
 {
-    qreal bottom = (lines.empty() ? 0.0 : lines.last()->sceneBoundingRect().bottom());
+    qreal bottom = (lines.empty() ? 0.0 : lines.end()->sceneBoundingRect().bottom());
 
     if (typingNotification.get() != nullptr)
         bottom += typingNotification->sceneBoundingRect().height() + lineSpacing;

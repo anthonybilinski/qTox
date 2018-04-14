@@ -23,6 +23,7 @@
 #include <QDateTime>
 #include <QGraphicsView>
 #include <QMargins>
+#include <deque>
 
 #include "chatline.h"
 #include "chatmessage.h"
@@ -134,7 +135,7 @@ private:
     QAction* selectAllAction = nullptr;
     QGraphicsScene* scene = nullptr;
     QGraphicsScene* busyScene = nullptr;
-    QVector<ChatLine::Ptr> lines;
+    std::deque<ChatLine::Ptr> lines;
     QList<ChatLine::Ptr> visibleLines;
     ChatLine::Ptr typingNotification;
     ChatLine::Ptr busyNotification;
