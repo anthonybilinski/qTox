@@ -38,7 +38,7 @@ ChatLineContentProxy::ChatLineContentProxy(QWidget* widget, ChatLineContentProxy
     , widthMin(minWidth)
     , widgetType{type}
 {
-    proxy = new QGraphicsProxyWidget(this);
+    proxy = std::unique_ptr<QGraphicsProxyWidget>(new QGraphicsProxyWidget(this));
     proxy->setWidget(widget);
 }
 

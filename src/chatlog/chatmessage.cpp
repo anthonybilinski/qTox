@@ -200,6 +200,7 @@ void ChatMessage::markAsSent(const QDateTime& time)
     QFont baseFont = Settings::getInstance().getChatMessageFont();
 
     // remove the spinner and replace it by $time
+    qDebug() << "marking as sent";
     replaceContent(2, new Timestamp(time, Settings::getInstance().getTimestampFormat(), baseFont));
 }
 

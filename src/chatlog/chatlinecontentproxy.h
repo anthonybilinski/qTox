@@ -22,6 +22,7 @@
 
 #include "chatlinecontent.h"
 #include <QGraphicsProxyWidget>
+#include <memory>
 
 class FileTransferWidget;
 
@@ -53,7 +54,7 @@ protected:
                          float widthInPercent);
 
 private:
-    QGraphicsProxyWidget* proxy;
+    std::unique_ptr<QGraphicsProxyWidget> proxy;
     float widthPercent;
     int widthMin;
     const ChatLineContentProxyType widgetType;
