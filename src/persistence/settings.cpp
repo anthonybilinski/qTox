@@ -733,14 +733,13 @@ QString Settings::getSettingsDirPath() const
         return qApp->applicationDirPath() + QDir::separator();
 
 // workaround for https://bugreports.qt-project.org/browse/QTBUG-38845
-#define Q_OS_WIN
 #ifdef Q_OS_WIN
     QString path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
     + QDir::separator() + "AppData" + QDir::separator() + "Roaming"
     + QDir::separator() + "tox";
     QDir tmp{path};
     auto retVal = tmp.absolutePath();
-//           + QDir::separator();
+           + QDir::separator();
 #elif defined(Q_OS_OSX)
     auto retVal = QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
                            + QDir::separator() + "Library" + QDir::separator()
