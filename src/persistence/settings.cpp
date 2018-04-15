@@ -732,22 +732,31 @@ QString Settings::getSettingsDirPath() const
     if (makeToxPortable)
         return qApp->applicationDirPath() + QDir::separator();
 
-// workaround for https://bugreports.qt-project.org/browse/QTBUG-38845
+    QString settingsDirPath;
+    QString beforeClean;
+    QDir settingsDir;
+// need to keep backwards compatibility, so can't change to GenericConfigLocation even after https://bugreports.qt.io/browse/QTBUG-38845 fix :(
 #ifdef Q_OS_WIN
-    return QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
-                           + QDir::separator() + "AppData" + QDir::separator() + "Roaming"
-                           + QDir::separator() + "tox")
+    beforeClean = QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
+                    + QDir::separator() + "AppData" + QDir::separator() + "Roaming"
+                    + QDir::separator() + "tox";
+    settingsDirPath = QDir::cleanPath(beforeClean)
            + QDir::separator();
 #elif defined(Q_OS_OSX)
-    return QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
+    settingsDirPath = QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)
                            + QDir::separator() + "Library" + QDir::separator()
                            + "Application Support" + QDir::separator() + "Tox")
            + QDir::separator();
+    beforeClean = settingsDirPath;
 #else
-    return QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation)
-                           + QDir::separator() + "tox")
+    beforeClean = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation)
+        + QDir::separator() + "tox";
+    settingsDirPath = QDir::cleanPath(beforeClean)
            + QDir::separator();
 #endif
+    qDebug() << "beforeClean:" << beforeClean;
+    qDebug() << "settingDirPath:" << settingsDirPath;
+    return settingsDirPath;
 }
 
 /**
