@@ -18,7 +18,7 @@
 */
 
 #include "text.h"
-#include "../documentcache.h"
+#include "../customtextdocument.h"
 
 #include <QAbstractTextDocumentLayout>
 #include <QApplication>
@@ -46,11 +46,7 @@ Text::Text(const QString& txt, const QFont& font, bool enableElide, const QStrin
     setAcceptHoverEvents(true);
 }
 
-Text::~Text()
-{
-    if (doc)
-        DocumentCache::getInstance().push(doc);
-}
+Text::~Text() = default;
 
 void Text::setText(const QString& txt)
 {
@@ -140,7 +136,7 @@ void Text::selectionDoubleClick(QPointF scenePos)
     int cur = cursorFromPos(scenePos);
 
     if (cur >= 0) {
-        QTextCursor cursor(doc);
+        QTextCursor cursor(doc.get());
         cursor.setPosition(cur);
         cursor.select(QTextCursor::WordUnderCursor);
 
@@ -161,7 +157,7 @@ void Text::selectionTripleClick(QPointF scenePos)
     int cur = cursorFromPos(scenePos);
 
     if (cur >= 0) {
-        QTextCursor cursor(doc);
+        QTextCursor cursor(doc.get());
         cursor.setPosition(cur);
         cursor.select(QTextCursor::BlockUnderCursor);
 
@@ -222,7 +218,7 @@ void Text::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWid
     QAbstractTextDocumentLayout::Selection sel;
 
     if (hasSelection()) {
-        sel.cursor = QTextCursor(doc);
+        sel.cursor = QTextCursor(doc.get());
         sel.cursor.setPosition(getSelectionStart());
         sel.cursor.setPosition(getSelectionEnd(), QTextCursor::KeepAnchor);
     }
@@ -296,7 +292,7 @@ QString Text::getText() const
  */
 QString Text::getLinkAt(QPointF scenePos) const
 {
-    QTextCursor cursor(doc);
+    QTextCursor cursor(doc.get());
     cursor.setPosition(cursorFromPos(scenePos));
     return cursor.charFormat().anchorHref();
 }
@@ -304,7 +300,7 @@ QString Text::getLinkAt(QPointF scenePos) const
 void Text::regenerate()
 {
     if (!doc) {
-        doc = DocumentCache::getInstance().pop();
+        doc = std::unique_ptr<QTextDocument>(new CustomTextDocument{});
         dirty = true;
     }
 
@@ -351,8 +347,7 @@ void Text::regenerate()
 
 void Text::freeResources()
 {
-    DocumentCache::getInstance().push(doc);
-    doc = nullptr;
+    doc.reset();
 }
 
 QSizeF Text::idealSize()
