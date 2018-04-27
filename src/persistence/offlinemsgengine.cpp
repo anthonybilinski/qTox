@@ -50,7 +50,7 @@ void OfflineMsgEngine::dischargeReceipt(int receipt)
 void OfflineMsgEngine::registerReceipt(int receipt, int64_t messageID, ChatMessage::Ptr msg)
 {
     QMutexLocker ml(&mutex);
-
+    qDebug() << "[OfflineMsgEngine] registerReceipt";
     auto it = receipts.find(receipt);
     if (it == receipts.end()) {
         it = receipts.insert(receipt, Receipt());

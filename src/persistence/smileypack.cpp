@@ -59,7 +59,7 @@ static const QString RICH_TEXT_PATTERN = QStringLiteral("<img title=\"%1\" src=\
 
 static const QString EMOTICONS_FILE_NAME = QStringLiteral("emoticons.xml");
 
-static constexpr int CLEANUP_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+static constexpr int CLEANUP_TIMEOUT = 10 * 1000; // 10 seconds
 
 /**
  * @brief Construct list of standard directories with "emoticons" sub dir, whether these directories
@@ -123,6 +123,7 @@ SmileyPack::~SmileyPack()
 void SmileyPack::cleanupIconsCache()
 {
     QMutexLocker locker(&loadingMutex);
+    qDebug() << "cleaning up icons cache, original size:" << cachedIcon.size();
     for (auto it = cachedIcon.begin(); it != cachedIcon.end();) {
         std::shared_ptr<QIcon>& icon = it->second;
         if (icon.use_count() == 1) {
@@ -131,6 +132,7 @@ void SmileyPack::cleanupIconsCache()
             ++it;
         }
     }
+    qDebug() << "cleaning up icons cache, final size:" << cachedIcon.size();
 }
 
 /**
