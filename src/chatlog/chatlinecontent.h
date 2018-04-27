@@ -21,6 +21,7 @@
 #define CHATLINECONTENT_H
 
 #include <QGraphicsItem>
+#include <QDebug>
 
 class ChatLine;
 
@@ -35,6 +36,8 @@ public:
         ChatLineContentType = QGraphicsItem::UserType + 1,
     };
 
+    ChatLineContent();
+    virtual ~ChatLineContent();
     int getColumn() const;
     int getRow() const;
 

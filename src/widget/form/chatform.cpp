@@ -755,9 +755,12 @@ void ChatForm::handleLoadedMessages(QList<History::HistMessage> newHistMsgs, boo
         MessageMetadata const metadata = getMessageMetadata(histMessage);
         lastDate = addDateLineIfNeeded(chatLines, lastDate, histMessage, metadata);
         auto msg = chatMessageFromHistMessage(histMessage, metadata);
+        qDebug() << "new ChatLine use count:" << msg.use_count();
         if (processUndelivered) {
+            qDebug() << "sendLoadedMessage???";
             sendLoadedMessage(msg, metadata);
         }
+        qDebug() << "new ChatLine use count:" << msg.use_count();
         chatLines.append(msg);
         previousId = metadata.authorPk;
         prevMsgDateTime = metadata.msgDateTime;
@@ -796,7 +799,10 @@ ChatForm::MessageMetadata ChatForm::getMessageMetadata(History::HistMessage cons
     const ToxPk authorPk = ToxId(histMessage.sender).getPublicKey();
     const QDateTime msgDateTime = histMessage.timestamp.toLocalTime();
     const bool isSelf = Core::getInstance()->getSelfId().getPublicKey() == authorPk;
+    qDebug() << "is sent?:" << histMessage.isSent;
+    qDebug() << "isSelf?:" << isSelf;
     const bool needSending = !histMessage.isSent && isSelf;
+    qDebug() << "needSending?:" << needSending;
     const bool isAction = histMessage.message.startsWith(ACTION_PREFIX, Qt::CaseInsensitive);
     const qint64 id = histMessage.id;
     return {isSelf, needSending, isAction, id, authorPk, msgDateTime};
@@ -810,17 +816,21 @@ ChatMessage::Ptr ChatForm::chatMessageFromHistMessage(History::HistMessage const
     ChatMessage::MessageType type = metadata.isAction ? ChatMessage::ACTION : ChatMessage::NORMAL;
     QDateTime dateTime = metadata.needSending ? QDateTime() : metadata.msgDateTime;
     auto msg = ChatMessage::createChatMessage(authorStr, messageText, type, metadata.isSelf, dateTime);
+    qDebug() << "new createChatMessage use count:" << msg.use_count();
     if (!metadata.isAction && needsToHideName(authorPk, metadata.msgDateTime)) {
         msg->hideSender();
     }
+    qDebug() << "new createChatMessage, after hiding sender:" << msg.use_count();
     return msg;
 }
 
 void ChatForm::sendLoadedMessage(ChatMessage::Ptr chatMsg, MessageMetadata const& metadata)
 {
     if (!metadata.needSending) {
+        qDebug() << "doesn't need sending";
         return;
     }
+    qDebug() << "needs sending";
     Core* core = Core::getInstance();
     uint32_t friendId = f->getId();
     QString stringMsg = chatMsg->toString();

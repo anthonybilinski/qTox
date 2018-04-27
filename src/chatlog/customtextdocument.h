@@ -32,6 +32,7 @@ class CustomTextDocument : public QTextDocument
     Q_OBJECT
 public:
     explicit CustomTextDocument(QObject* parent = nullptr);
+    ~CustomTextDocument();
 
 protected:
     virtual QVariant loadResource(int type, const QUrl& name);

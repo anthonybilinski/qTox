@@ -46,6 +46,7 @@ public:
     };
 
     ChatMessage();
+    ~ChatMessage();
 
     static ChatMessage::Ptr createChatMessage(const QString& sender, const QString& rawMessage,
                                               MessageType type, bool isMe,

@@ -19,6 +19,16 @@
 
 #include "chatlinecontent.h"
 
+ChatLineContent::ChatLineContent()
+{
+    qDebug() << "[ChatLineContent] Constructing";
+}
+
+ChatLineContent::~ChatLineContent()
+{
+    qDebug() << "[ChatLineContent] Destructing";
+}
+
 void ChatLineContent::setIndex(int r, int c)
 {
     row = r;

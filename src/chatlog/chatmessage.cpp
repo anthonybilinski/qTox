@@ -37,11 +37,18 @@
 
 ChatMessage::ChatMessage()
 {
+    qDebug() << "[ChatMessage] Constructing";
+}
+
+ChatMessage::~ChatMessage()
+{
+    qDebug() << "[ChatMessage] Destructing";
 }
 
 ChatMessage::Ptr ChatMessage::createChatMessage(const QString& sender, const QString& rawMessage,
                                                 MessageType type, bool isMe, const QDateTime& date)
 {
+    qDebug() << "ChatMessage::createChatMessage";
     ChatMessage::Ptr msg = ChatMessage::Ptr(new ChatMessage);
 
     QString text = rawMessage.toHtmlEscaped();
@@ -92,18 +99,21 @@ ChatMessage::Ptr ChatMessage::createChatMessage(const QString& sender, const QSt
                                                        ? QString("%1 %2").arg(sender, rawMessage)
                                                        : rawMessage),
                    ColumnFormat(1.0, ColumnFormat::VariableSize));
-    msg->addColumn(new Spinner(":/ui/chatArea/spinner.svg", QSize(16, 16), 360.0 / 1.6),
+    if (date.isNull()) {
+        msg->addColumn(new Spinner(":/ui/chatArea/spinner.svg", QSize(16, 16), 360.0 / 1.6),
                    ColumnFormat(TIME_COL_WIDTH, ColumnFormat::FixedSize, ColumnFormat::Right));
-
-    if (!date.isNull())
-        msg->markAsSent(date);
-
+    } else {
+        msg->addColumn(new Timestamp(date, Settings::getInstance().getTimestampFormat(), baseFont),
+                       ColumnFormat(TIME_COL_WIDTH, ColumnFormat::FixedSize, ColumnFormat::Right));
+    }
+    qDebug() << "new createChatMessage returning, use count:" << msg.use_count();
     return msg;
 }
 
 ChatMessage::Ptr ChatMessage::createChatInfoMessage(const QString& rawMessage,
                                                     SystemMessageType type, const QDateTime& date)
 {
+    qDebug() << "ChatMessage::createChatInfoMessage";
     ChatMessage::Ptr msg = ChatMessage::Ptr(new ChatMessage);
     QString text = rawMessage.toHtmlEscaped();
 
@@ -135,6 +145,7 @@ ChatMessage::Ptr ChatMessage::createChatInfoMessage(const QString& rawMessage,
 ChatMessage::Ptr ChatMessage::createFileTransferMessage(const QString& sender, ToxFile file,
                                                         bool isMe, const QDateTime& date)
 {
+    qDebug() << "ChatMessage::createFileTransferMessage";
     ChatMessage::Ptr msg = ChatMessage::Ptr(new ChatMessage);
 
     QFont baseFont = Settings::getInstance().getChatMessageFont();
@@ -154,6 +165,7 @@ ChatMessage::Ptr ChatMessage::createFileTransferMessage(const QString& sender, T
 
 ChatMessage::Ptr ChatMessage::createTypingNotification()
 {
+    qDebug() << "ChatMessage::createTypingNotification";
     ChatMessage::Ptr msg = ChatMessage::Ptr(new ChatMessage);
 
     QFont baseFont = Settings::getInstance().getChatMessageFont();
@@ -183,6 +195,7 @@ ChatMessage::Ptr ChatMessage::createTypingNotification()
  */
 ChatMessage::Ptr ChatMessage::createBusyNotification()
 {
+    qDebug() << "ChatMessage::createBusyNotification";
     ChatMessage::Ptr msg = ChatMessage::Ptr(new ChatMessage);
     QFont baseFont = Settings::getInstance().getChatMessageFont();
     baseFont.setPixelSize(baseFont.pixelSize() + 2);
@@ -196,6 +209,7 @@ ChatMessage::Ptr ChatMessage::createBusyNotification()
 
 void ChatMessage::markAsSent(const QDateTime& time)
 {
+    qDebug() << "ChatMessage::markAsSent";
     QFont baseFont = Settings::getInstance().getChatMessageFont();
 
     // remove the spinner and replace it by $time

@@ -29,8 +29,14 @@
 CustomTextDocument::CustomTextDocument(QObject* parent)
     : QTextDocument(parent)
 {
+    qDebug() << "[CustomTextDocument] Constructing";
     setUndoRedoEnabled(false);
     setUseDesignMetrics(false);
+}
+
+CustomTextDocument::~CustomTextDocument()
+{
+    qDebug() << "[CustomTextDocument] Destructing";
 }
 
 QVariant CustomTextDocument::loadResource(int type, const QUrl& name)

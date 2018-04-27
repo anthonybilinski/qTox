@@ -25,10 +25,12 @@
 
 ChatLine::ChatLine()
 {
+    qDebug() << "[ChatLine] Constructing";
 }
 
 ChatLine::~ChatLine()
 {
+    qDebug() << "[ChatLine] Destructing";
     for (ChatLineContent* c : content) {
         if (c->scene())
             c->scene()->removeItem(c);

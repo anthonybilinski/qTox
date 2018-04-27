@@ -553,6 +553,7 @@ ChatLineContent* ChatLog::getContentFromGlobalPos(QPoint pos) const
 
 void ChatLog::clear()
 {
+    qDebug() << "[ChatLog] clear";
     clearSelection();
 
     QVector<ChatLine::Ptr> savedLines;
@@ -564,6 +565,9 @@ void ChatLog::clear()
             l->removeFromScene();
     }
 
+    qDebug() << "[ChatLog] lines num:" << lines.size();
+    qDebug() << "[ChatLog] visibleLines num:" << visibleLines.size();
+    qDebug() << "[ChatLog] savedLines num:" << savedLines.size();
     lines.clear();
     visibleLines.clear();
     for (ChatLine::Ptr l : savedLines)
@@ -646,6 +650,7 @@ void ChatLog::forceRelayout()
 
 void ChatLog::checkVisibility()
 {
+    qDebug() << "[checkVisibility]: GO";
     if (lines.empty())
         return;
 
@@ -658,25 +663,34 @@ void ChatLog::checkVisibility()
                                        ChatLine::lessThanBSRectTop);
 
     // set visibilty
+    qDebug() << "[checkVisibility]: set visibility";
     QList<ChatLine::Ptr> newVisibleLines;
     for (auto itr = lowerBound; itr != upperBound; ++itr) {
+        qDebug() << "[checkVisibility]: append";
         newVisibleLines.append(*itr);
 
-        if (!visibleLines.contains(*itr))
+        qDebug() << "[checkVisibility]: contains";
+        if (!visibleLines.contains(*itr)) {
+            qDebug() << "[checkVisibility]: changed";
             (*itr)->visibilityChanged(true);
-
+        }
+        qDebug() << "[checkVisibility]: removeOne";
         visibleLines.removeOne(*itr);
     }
 
     // these lines are no longer visible
+    qDebug() << "[checkVisibility]: no longer visible";
     for (ChatLine::Ptr line : visibleLines)
         line->visibilityChanged(false);
 
+    qDebug() << "[checkVisibility]: assign";
     visibleLines = newVisibleLines;
 
     // enforce order
+    qDebug() << "[checkVisibility]: sort";
     std::sort(visibleLines.begin(), visibleLines.end(), ChatLine::lessThanRowIndex);
 
+    qDebug() << "[checkVisibility]: done";
     // if (!visibleLines.empty())
     //  qDebug() << "visible from " << visibleLines.first()->getRow() << "to " <<
     //  visibleLines.last()->getRow() << " total " << visibleLines.size();
