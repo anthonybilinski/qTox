@@ -763,7 +763,7 @@ void ChatForm::handleLoadedMessages(QList<History::HistMessage> newHistMsgs, boo
         prevMsgDateTime = metadata.msgDateTime;
     }
     previousId = prevIdBackup;
-    insertChatlines(chatLines);
+//    insertChatlines(chatLines);
     if (searchAfterLoadHistory && chatLines.isEmpty()) {
         onContinueSearch();
     }

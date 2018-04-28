@@ -300,7 +300,7 @@ QString Text::getLinkAt(QPointF scenePos) const
 void Text::regenerate()
 {
     if (!doc) {
-        doc = std::unique_ptr<QTextDocument>(new CustomTextDocument{});
+        doc = std::unique_ptr<CustomTextDocument>(new CustomTextDocument{});
         dirty = true;
     }
 
