@@ -566,6 +566,14 @@ void ChatLog::clear()
 
     lines.clear();
     visibleLines.clear();
+//    scene->clear();
+//    scene->invalidate();
+//    auto views = scene->views();
+    QGraphicsView::resetCachedContent();
+//    for (auto& view : views) {
+//    	qDebug() << "resetting view's cache";
+//    	view->resetCachedContent();
+//    }
     for (ChatLine::Ptr l : savedLines)
         insertChatlineAtBottom(l);
 

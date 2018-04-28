@@ -30,8 +30,12 @@ ChatLine::ChatLine()
 ChatLine::~ChatLine()
 {
     for (ChatLineContent* c : content) {
-        if (c->scene())
+        if (c->scene()) {
+        	qDebug() << "content has a scene";
             c->scene()->removeItem(c);
+        } else {
+        	qDebug() << "had no scene, not removing";
+        }
 
         delete c;
     }
@@ -81,18 +85,27 @@ ChatLineContent* ChatLine::getContent(QPointF scenePos) const
 void ChatLine::removeFromScene()
 {
     for (ChatLineContent* c : content) {
-        if (c->scene())
+        if (c->scene()) {
+        	qDebug() << "removeFromScene: removing from scene";
             c->scene()->removeItem(c);
+        } else {
+        	qDebug() << "removeFromScene: not in scene, not removing";
+        }
     }
 }
 
 void ChatLine::addToScene(QGraphicsScene* scene)
 {
-    if (!scene)
+    if (!scene) {
+    	qDebug() << "trie adding to null scene, nah";
         return;
+    }
 
-    for (ChatLineContent* c : content)
+    for (ChatLineContent* c : content) {
+    	qDebug() << "added content to scene";
         scene->addItem(c);
+        qDebug() << "item's scene is now:" << (void*)c->scene();
+    }
 }
 
 void ChatLine::setVisible(bool visible)
