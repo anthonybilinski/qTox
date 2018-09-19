@@ -167,6 +167,7 @@ UserInterfaceForm::UserInterfaceForm(SettingsWidget* myParent)
 
 UserInterfaceForm::~UserInterfaceForm()
 {
+    printf("UserInterfaceForm::~UserInterfaceForm\n");
     Translator::unregister(this);
     delete bodyUI;
 }

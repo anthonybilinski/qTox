@@ -4,6 +4,7 @@
 #include <QComboBox>
 #include <QEvent>
 #include <QSpinBox>
+#include <QDebug>
 
 /**
  * @class GenericForm
@@ -15,6 +16,11 @@
 GenericForm::GenericForm(const QPixmap& icon)
     : formIcon(icon)
 {
+}
+
+GenericForm::~GenericForm()
+{
+    printf("GenericForm::~GenericForm\n");
 }
 
 QPixmap GenericForm::getFormIcon()

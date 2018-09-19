@@ -49,9 +49,9 @@ SettingsWidget::SettingsWidget(QWidget* parent)
 
     setAttribute(Qt::WA_DeleteOnClose);
 
-    QVBoxLayout* bodyLayout = new QVBoxLayout();
+    QVBoxLayout* bodyLayout = new QVBoxLayout(this);
 
-    settingsWidgets = new QTabWidget(this);
+    settingsWidgets = new QTabWidget();
     settingsWidgets->setTabPosition(QTabWidget::North);
     bodyLayout->addWidget(settingsWidgets);
 
@@ -73,6 +73,7 @@ SettingsWidget::SettingsWidget(QWidget* parent)
 
 SettingsWidget::~SettingsWidget()
 {
+    printf("SettingsWidget::~SettingsWidget\n");
     Translator::unregister(this);
 }
 

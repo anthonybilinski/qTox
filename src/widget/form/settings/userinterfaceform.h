@@ -24,6 +24,7 @@
 #include "src/widget/form/settingswidget.h"
 
 #include <memory>
+#include <QDebug>
 
 namespace Ui {
 class UserInterfaceSettings;
@@ -34,7 +35,7 @@ class UserInterfaceForm : public GenericForm
     Q_OBJECT
 public:
     explicit UserInterfaceForm(SettingsWidget* myParent);
-    ~UserInterfaceForm();
+    ~UserInterfaceForm() override;
     virtual QString getFormName() final override
     {
         return tr("User Interface");
