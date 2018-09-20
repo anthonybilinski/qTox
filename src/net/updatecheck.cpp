@@ -25,15 +25,26 @@
 #include <QRegularExpression>
 #include <QNetworkReply>
 #include <QObject>
+#include <QTimer>
 
-void UpdateCheck::checkForUpdate()
+UpdateCheck::UpdateCheck()
 {
     manager = std::unique_ptr<QNetworkAccessManager>(new QNetworkAccessManager());
     manager->setProxy(Settings::getInstance().getProxy());
-    QNetworkRequest request{QStringLiteral("https://api.github.com/repos/qTox/qTox/releases/latest")};
-    auto reply = manager->get(request);
+    updateTimer = std::unique_ptr<QTimer>(new QTimer());
+    updateTimer->start(1000 * 60 * 60 * 24 /* 1 day */);
+    connect(updateTimer.get(), &QTimer::timeout, this, &UpdateCheck::checkForUpdate);
+}
 
-    QObject::connect(reply, &QNetworkReply::finished, [this, reply](){
+UpdateCheck::~UpdateCheck() = default;
+
+void UpdateCheck::checkForUpdate()
+{
+    QNetworkRequest request{QStringLiteral("https://api.github.com/repos/qTox/qTox/releases/latest")};
+    // shared instead of unique because C++11 doesn't support move into labda capture
+    auto reply = std::shared_ptr<QNetworkReply>(manager->get(request)); 
+
+    QObject::connect(reply.get(), &QNetworkReply::finished, [this, reply](){
         if (reply->error() != QNetworkReply::NoError) {
             qWarning() << "Failed to check for update:" << reply->error();
             emit updateCheckFailed();

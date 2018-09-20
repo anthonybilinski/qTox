@@ -40,7 +40,7 @@
 
 #include <memory>
 
-SettingsWidget::SettingsWidget(QWidget* parent)
+SettingsWidget::SettingsWidget(UpdateCheck* updateCheck, QWidget* parent)
     : QWidget(parent, Qt::Window)
 {
     Audio* audio = &Audio::getInstance();
@@ -63,7 +63,7 @@ SettingsWidget::SettingsWidget(QWidget* parent)
     AVForm* rawAvfrm = new AVForm(audio, coreAV, camera, audioSettings, videoSettings);
     std::unique_ptr<AVForm> avfrm(rawAvfrm);
     std::unique_ptr<AdvancedForm> expfrm(new AdvancedForm());
-    std::unique_ptr<AboutForm> abtfrm(new AboutForm());
+    std::unique_ptr<AboutForm> abtfrm(new AboutForm(updateCheck));
 
     connect(abtfrm.get(), &AboutForm::updateAvailable, this, &SettingsWidget::onUpdateAvailable);
 

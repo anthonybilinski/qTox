@@ -61,6 +61,7 @@
 #include "src/model/groupinvite.h"
 #include "src/model/profile/profileinfo.h"
 #include "src/net/autoupdate.h"
+#include "src/net/updatecheck.h"
 #include "src/nexus.h"
 #include "src/persistence/offlinemsgengine.h"
 #include "src/persistence/profile.h"
@@ -371,7 +372,6 @@ void Widget::init()
     if (s.getCheckUpdates())
         AutoUpdater::checkUpdatesAsyncInteractive();
 #endif
-
 
     friendRequestsButton = nullptr;
     groupInvitesButton = nullptr;
@@ -852,8 +852,10 @@ void Widget::onIconClick(QSystemTrayIcon::ActivationReason reason)
 void Widget::onShowSettings()
 {
     if (!settingsWidget) {
-        settingsWidget = new SettingsWidget(this);
-        connect(settingsWidget.data(), &SettingsWidget::updateAvailable, this, &Widget::onUpdateAvailable);
+        updateCheck = std::unique_ptr<UpdateCheck>(new UpdateCheck());
+        settingsWidget = new SettingsWidget(updateCheck.get(), this);
+        connect(updateCheck.get(), &UpdateCheck::updateAvailable, this, &Widget::onUpdateAvailable);
+        updateCheck->checkForUpdate();
     }
 
     if (Settings::getInstance().getSeparateWindow()) {
@@ -1592,7 +1594,7 @@ void Widget::toggleFullscreen()
     }
 }
 
-void Widget::onUpdateAvailable()
+void Widget::onUpdateAvailable(QString /*latestVersion*/, QUrl /*link*/)
 {
     ui->settingsButton->setProperty("update-available", true);
     ui->settingsButton->style()->unpolish(ui->settingsButton);

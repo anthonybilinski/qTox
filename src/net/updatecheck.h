@@ -16,17 +16,21 @@
     You should have received a copy of the GNU General Public License
     along with qTox.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include <QString>
-#include <QUrl>
-#include <QNetworkAccessManager>
 #include <QObject>
 
 #include <memory>
+
+class QString;
+class QUrl;
+class QTimer;
+class QNetworkAccessManager;
 class UpdateCheck : public QObject
 {
     Q_OBJECT
 
 public:
+    UpdateCheck();
+    ~UpdateCheck();
     void checkForUpdate();
 
 signals:
@@ -36,4 +40,5 @@ signals:
 
 private:
     std::unique_ptr<QNetworkAccessManager> manager;
+    std::unique_ptr<QTimer> updateTimer;
 };

@@ -27,6 +27,7 @@ class Core;
 class QTimer;
 class QString;
 class UpdateCheck;
+class QLayoutItem;
 
 namespace Ui {
 class AboutSettings;
@@ -36,7 +37,7 @@ class AboutForm : public GenericForm
 {
     Q_OBJECT
 public:
-    AboutForm();
+    AboutForm(UpdateCheck* updateCheck);
     ~AboutForm();
     virtual QString getFormName() final override
     {
@@ -61,12 +62,17 @@ private:
     void retranslateUi();
     void replaceVersions();
     void checkForUpdate();
+    void replaceUpdateStatus(QWidget* newWidget);
     inline QString createLink(QString path, QString text) const;
 
 private:
     Ui::AboutSettings* bodyUI;
     QTimer* progressTimer;
-    UpdateCheck* updateCheck{nullptr};
+    UpdateCheck* updateCheck;
+    QWidget* curUpdateWidget{nullptr};
+    std::unique_ptr<QWidget> updateButton;
+    std::unique_ptr<QWidget> upToDateWidget;
+    std::unique_ptr<QWidget> updateCheckFailedWidget;
 };
 
 #endif // ABOUTFORM_H

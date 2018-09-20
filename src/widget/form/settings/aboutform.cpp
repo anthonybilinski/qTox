@@ -45,10 +45,11 @@
 /**
  * @brief Constructor of AboutForm.
  */
-AboutForm::AboutForm()
+AboutForm::AboutForm(UpdateCheck* updateCheck)
     : GenericForm(QPixmap(":/img/settings/general.png"))
     , bodyUI(new Ui::AboutSettings)
     , progressTimer(new QTimer(this))
+    , updateCheck(updateCheck)
 {
     bodyUI->setupUi(this);
 
@@ -92,11 +93,14 @@ void AboutForm::replaceVersions()
     bodyUI->youAreUsing->setText(tr("You are using qTox version %1.").arg(QString(GIT_DESCRIBE)));
 
 #if UPDATE_CHECK_ENABLED
-    updateCheck = new UpdateCheck();
-    connect(updateCheck, &UpdateCheck::updateAvailable, this, &AboutForm::onUpdateAvailable);
-    connect(updateCheck, &UpdateCheck::upToDate, this, &AboutForm::onUpToDate);
-    connect(updateCheck, &UpdateCheck::updateCheckFailed, this, &AboutForm::onUpdateCheckFailed);
-    updateCheck->checkForUpdate();
+    if (updateCheck != nullptr) {
+        connect(updateCheck, &UpdateCheck::updateAvailable, this, &AboutForm::onUpdateAvailable);
+        connect(updateCheck, &UpdateCheck::upToDate, this, &AboutForm::onUpToDate);
+        connect(updateCheck, &UpdateCheck::updateCheckFailed, this, &AboutForm::onUpdateCheckFailed);
+        updateCheck->checkForUpdate();
+    } else {
+        qWarning() << "AboutForm passed null UpdateCheck!";
+    }
 #endif
 
     QString commitLink = "https://github.com/qTox/qTox/commit/" + QString(GIT_VERSION);
@@ -163,43 +167,35 @@ void AboutForm::replaceVersions()
 
 void AboutForm::onUpdateAvailable(QString latestVersion, QUrl link)
 {
-    connect(bodyUI->updateLink, &QPushButton::clicked, [link](){
-        QDesktopServices::openUrl(link);
-    });
-    bodyUI->updateLink->setVisible(true);
-    updateCheck->deleteLater();
-    updateCheck = nullptr;
-    emit updateAvailable();
+    if (updateButton == nullptr) {
+        connect(bodyUI->updateLink, &QPushButton::clicked, [link](){
+            QDesktopServices::openUrl(link);
+        });
+        bodyUI->updateLink->setVisible(true);
+    } else {
+        replaceUpdateStatus(updateButton.get());
+    }
 }
 
 void AboutForm::onUpToDate()
 {
-#if UPDATE_CHECK_ENABLED
-    auto label = new QLabel(tr("qTox is up to date ✓"));
-    auto oldLayout = bodyUI->gridLayout->layout()->replaceWidget(bodyUI->updateLink, label);
-    if (oldLayout) {
-        delete oldLayout;
-    }
-    else {
-        qWarning() << "Couldn't find updateLink to replace with up to date notification";
-    }
-    updateCheck->deleteLater();
-    updateCheck = nullptr;
-#endif
+    if (upToDateWidget == nullptr)
+        upToDateWidget = std::unique_ptr<QWidget>(new QLabel(tr("qTox is up to date ✓")));
+    
+    replaceUpdateStatus(upToDateWidget.get());
 }
 
 void AboutForm::onUpdateCheckFailed()
 {
-    auto label = new QLabel(tr("Update check failed"));
-    auto oldLayout = bodyUI->gridLayout->layout()->replaceWidget(bodyUI->updateLink, label);
-    if (oldLayout) {
-        delete oldLayout;
-    }
-    else {
-        qWarning() << "Couldn't find updateLink to replace with up to date notification";
-    }
-    updateCheck->deleteLater();
-    updateCheck = nullptr;
+    if (updateCheckFailedWidget == nullptr)
+        updateCheckFailedWidget = std::unique_ptr<QWidget>(new QLabel(tr("Update check failed")));
+    
+    replaceUpdateStatus(updateCheckFailedWidget.get());
+}
+
+void AboutForm::replaceUpdateStatus(QWidget* newWidget)
+{
+    bodyUI->gridLayout->layout()->replaceWidget(curUpdateWidget, newWidget);
 }
 
 /**
