@@ -798,6 +798,22 @@ bool Profile::rename(QString newName)
     return true;
 }
 
+QString Profile::hashedFriendId(const QString& ownerStr) const
+{
+    QByteArray idData = ownerStr.toUtf8();
+    QByteArray pubkeyData = core->getSelfId().getPublicKey().getKey();
+    constexpr int hashSize = TOX_PUBLIC_KEY_SIZE;
+    static_assert(hashSize >= crypto_generichash_BYTES_MIN && hashSize <= crypto_generichash_BYTES_MAX,
+                  "Hash size not supported by libsodium");
+    static_assert(hashSize >= crypto_generichash_KEYBYTES_MIN
+                      && hashSize <= crypto_generichash_KEYBYTES_MAX,
+                  "Key size not supported by libsodium");
+    QByteArray hash(hashSize, 0);
+    crypto_generichash((uint8_t*)hash.data(), hashSize, (uint8_t*)idData.data(), idData.size(),
+                       (uint8_t*)pubkeyData.data(), pubkeyData.size());
+    return hash.toHex().toUpper();
+}
+
 const ToxEncrypt* Profile::getPasskey() const
 {
     return passkey.get();

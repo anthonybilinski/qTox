@@ -21,6 +21,8 @@
 #include "ui_filetransferwidget.h"
 
 #include "src/core/core.h"
+#include "src/friendlist.h"
+#include "src/model/friend.h"
 #include "src/persistence/settings.h"
 #include "src/widget/gui.h"
 #include "src/widget/style.h"
@@ -554,30 +556,36 @@ void FileTransferWidget::setupButtons(ToxFile const& file)
 void FileTransferWidget::handleButton(QPushButton* btn)
 {
     if (fileInfo.direction == ToxFile::SENDING) {
-        if (btn->objectName() == "cancel") {
+        if (btn->objectName() == "cancel")
             Core::getInstance()->cancelFileSend(fileInfo.friendId, fileInfo.fileNum);
-        } else if (btn->objectName() == "pause") {
+        else if (btn->objectName() == "pause")
             Core::getInstance()->pauseResumeFile(fileInfo.friendId, fileInfo.fileNum);
-        } else if (btn->objectName() == "resume") {
+        else if (btn->objectName() == "resume")
             Core::getInstance()->pauseResumeFile(fileInfo.friendId, fileInfo.fileNum);
-        }
     } else // receiving or paused
     {
-        if (btn->objectName() == "cancel") {
+        if (btn->objectName() == "cancel")
             Core::getInstance()->cancelFileRecv(fileInfo.friendId, fileInfo.fileNum);
-        } else if (btn->objectName() == "pause") {
+        else if (btn->objectName() == "pause")
             Core::getInstance()->pauseResumeFile(fileInfo.friendId, fileInfo.fileNum);
-        } else if (btn->objectName() == "resume") {
+        else if (btn->objectName() == "resume")
             Core::getInstance()->pauseResumeFile(fileInfo.friendId, fileInfo.fileNum);
-        } else if (btn->objectName() == "accept") {
-            QString path =
-                QFileDialog::getSaveFileName(Q_NULLPTR,
-                                             tr("Save a file", "Title of the file saving dialog"),
-                                             Settings::getInstance().getGlobalAutoAcceptDir() + "/"
-                                                 + fileInfo.fileName);
-            acceptTransfer(path);
+        else if (btn->objectName() == "accept") {
+            auto f = FriendList::findFriend(fileInfo.friendId);
+            assert(f);
+
+            if (f) {
+                QString path = QFileDialog::getSaveFileName(Q_NULLPTR,
+                                                            tr("Save a file",
+                                                               "Title of the file saving dialog"),
+                                                            Settings::getInstance().getAutoAcceptDir(
+                                                                f->getPublicKey())
+                                                                + "/" + fileInfo.fileName);
+                acceptTransfer(path);
+            }
         }
     }
+
 
     if (btn->objectName() == "ok" || btn->objectName() == "previewButton") {
         Widget::confirmExecutableOpen(QFileInfo(fileInfo.filePath));

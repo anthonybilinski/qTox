@@ -378,16 +378,14 @@ void ChatForm::onFileRecvRequest(ToxFile file)
     FileTransferWidget* tfWidget = static_cast<FileTransferWidget*>(proxy->getWidget());
 
     const Settings& settings = Settings::getInstance();
-    QString autoAcceptDir = settings.getAutoAcceptDir(f->getPublicKey());
-
-    if (autoAcceptDir.isEmpty() && settings.getAutoSaveEnabled()) {
-        autoAcceptDir = settings.getGlobalAutoAcceptDir();
-    }
+    const auto pk = f->getPublicKey();
+    const auto autoAcceptEnable = settings.getAutoAcceptEnable(pk) || settings.getAutoSaveEnabled();
+    QString autoAcceptDir = settings.getAutoAcceptDir(pk);
 
     auto maxAutoAcceptSize = settings.getMaxAutoAcceptSize();
     bool autoAcceptSizeCheckPassed = maxAutoAcceptSize == 0 || maxAutoAcceptSize >= file.filesize;
 
-    if (!autoAcceptDir.isEmpty() && autoAcceptSizeCheckPassed) {
+    if (autoAcceptEnable && autoAcceptSizeCheckPassed) {
         tfWidget->autoAcceptTransfer(autoAcceptDir);
     }
 
@@ -967,6 +965,7 @@ void ChatForm::sendImage(const QPixmap& pixmap)
     // Format should be: `qTox_Screenshot_yyyy-MM-dd HH-mm-ss.zzz.png`
     filepath += QString("qTox_Image_%1.png")
                        .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd HH-mm-ss.zzz"));
+
     QFile file(filepath);
 
     if (file.open(QFile::ReadWrite)) {
