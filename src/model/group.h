@@ -72,7 +72,7 @@ private:
     bool hasNewMessages;
     bool userWasMentioned;
     int groupId;
-    const GroupId persistentGroupId;
+    std::shared_ptr<const GroupId> persistentGroupId;
     bool avGroupchat;
 };
 

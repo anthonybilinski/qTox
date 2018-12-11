@@ -101,10 +101,10 @@ void AboutFriend::setAutoGroupInvite(bool enabled)
 
 bool AboutFriend::clearHistory()
 {
-    const ToxPk pk = f->getPublicKey();
+    auto& id = f->getPublicKey();
     History* const history = Nexus::getProfile()->getHistory();
     if (history) {
-        history->removeContactHistory(std::make_shared<const ToxPk>(pk));
+        history->removeContactHistory(id);
         return true;
     }
 
@@ -115,8 +115,8 @@ bool AboutFriend::isHistoryExistence()
 {
     History* const history = Nexus::getProfile()->getHistory();
     if (history) {
-        const ToxPk pk = f->getPublicKey();
-        return history->isHistoryExistence(std::make_shared<const ToxPk>(pk));
+        auto id = f->getPersistentId();
+        return history->isHistoryExistence(id);
     }
 
     return false;

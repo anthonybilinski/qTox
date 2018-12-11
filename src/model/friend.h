@@ -67,7 +67,7 @@ private:
     QString userName;
     QString userAlias;
     QString statusMessage;
-    ToxPk friendPk;
+    std::shared_ptr<const ToxPk> friendPk;
     uint32_t friendId;
     bool hasNewEvents;
     Status friendStatus;

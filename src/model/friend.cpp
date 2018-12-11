@@ -27,7 +27,7 @@
 Friend::Friend(uint32_t friendId, const ToxPk& friendPk, const QString& userAlias, const QString& userName)
     : userName{userName}
     , userAlias{userAlias}
-    , friendPk{friendPk}
+    , friendPk{std::make_shared<const ToxPk>(friendPk)}
     , friendId{friendId}
     , hasNewEvents{false}
     , friendStatus{Status::Offline}
@@ -45,7 +45,7 @@ void Friend::setName(const QString& _name)
 {
     QString name = _name;
     if (name.isEmpty()) {
-        name = friendPk.toString();
+        name = friendPk->toString();
     }
 
     // save old displayed name to be able to compare for changes
@@ -121,7 +121,7 @@ bool Friend::hasAlias() const
 
 const ToxPk& Friend::getPublicKey() const
 {
-    return friendPk;
+    return *friendPk;
 }
 
 uint32_t Friend::getId() const
