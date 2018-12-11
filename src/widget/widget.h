@@ -31,6 +31,8 @@
 
 #include "src/core/core.h"
 #include "src/core/toxfile.h"
+#include "src/core/groupid.h"
+#include "src/core/toxpk.h"
 #include "src/core/toxid.h"
 
 #define PIXELS_TO_ACT 7
@@ -168,7 +170,7 @@ public slots:
     void updateFriendActivity(const Friend* frnd);
     void onMessageSendResult(uint32_t friendId, const QString& message, int messageId);
     void onReceiptRecieved(int friendId, int receipt);
-    void onEmptyGroupCreated(int groupId, const ToxPk& groupPersistentId, const QString& title);
+    void onEmptyGroupCreated(int groupId, const GroupId& groupPersistentId, const QString& title);
     void onGroupInviteReceived(const GroupInvite& inviteInfo);
     void onGroupInviteAccepted(const GroupInvite& inviteInfo);
     void onGroupMessageReceived(int groupnumber, int peernumber, const QString& message, bool isAction);
@@ -237,7 +239,7 @@ private:
     bool newMessageAlert(QWidget* currentWindow, bool isActive, bool sound = true, bool notify = true);
     void setActiveToolMenuButton(ActiveToolMenuButton newActiveButton);
     void hideMainForms(GenericChatroomWidget* chatroomWidget);
-    Group* createGroup(int groupId, const ToxPk& groupPersistentId);
+    Group* createGroup(int groupId, const GroupId& groupPersistentId);
     void removeFriend(Friend* f, bool fake = false);
     void removeGroup(Group* g, bool fake = false);
     void removeContactHistory(Contact* c);

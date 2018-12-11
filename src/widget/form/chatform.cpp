@@ -847,7 +847,7 @@ void ChatForm::SendMessageStr(QString msg)
             ToxPk pk = f->getPublicKey();
             QString name = Core::getInstance()->getUsername();
             bool isSent = !Settings::getInstance().getFauxOfflineMessaging();
-            history->addNewMessage(pk, historyPart, selfPk, timestamp, isSent, name,
+            history->addNewMessage(std::make_shared<const ToxPk>(pk), historyPart, std::make_shared<const ToxPk>(selfPk), timestamp, isSent, name,
                                    [offMsgEngine, rec, ma](int64_t id) {
                                        offMsgEngine->registerReceipt(rec, id, ma);
                                    });

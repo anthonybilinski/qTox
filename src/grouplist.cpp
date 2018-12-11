@@ -24,7 +24,7 @@
 
 QHash<int, Group*> GroupList::groupList;
 
-Group* GroupList::addGroup(int groupId, const ToxPk& persistentGroupId, const QString& name, bool isAvGroupchat,
+Group* GroupList::addGroup(int groupId, const GroupId& persistentGroupId, const QString& name, bool isAvGroupchat,
                            const QString& selfName)
 {
     auto checker = groupList.find(groupId);

@@ -21,6 +21,9 @@
 #include "friend.h"
 #include "src/friendlist.h"
 #include "src/core/core.h"
+#include "src/core/contactid.h"
+#include "src/core/groupid.h"
+#include "src/core/toxpk.h"
 #include "src/persistence/settings.h"
 #include "src/widget/form/groupchatform.h"
 #include "src/widget/groupwidget.h"
@@ -28,7 +31,7 @@
 
 static const int MAX_GROUP_TITLE_LENGTH = 128;
 
-Group::Group(int groupId, const ToxPk persistentGroupId, const QString& name, bool isAvGroupchat, const QString& selfName)
+Group::Group(int groupId, const GroupId persistentGroupId, const QString& name, bool isAvGroupchat, const QString& selfName)
     : selfName{selfName}
     , title{name}
     , groupId(groupId)
@@ -135,9 +138,9 @@ uint32_t Group::getId() const
     return groupId;
 }
 
-const ToxPk Group::getPersistentId() const
+ContactIdPtr Group::getPersistentId() const
 {
-    return persistentGroupId;
+    return std::make_shared<const GroupId>(persistentGroupId);
 }
 
 int Group::getPeersCount() const

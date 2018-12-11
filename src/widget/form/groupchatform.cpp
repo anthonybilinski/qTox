@@ -22,6 +22,8 @@
 #include "tabcompleter.h"
 #include "src/core/core.h"
 #include "src/core/coreav.h"
+#include "src/core/toxpk.h"
+#include "src/core/groupid.h"
 #include "src/chatlog/chatlog.h"
 #include "src/chatlog/content/text.h"
 #include "src/model/friend.h"
@@ -181,10 +183,10 @@ void GroupChatForm::sendMessageStr(QString msg)
             // the message ourselves if we're not sending it.
             addSelfMessage(part, timestamp, isAction);
             if (history && Settings::getInstance().getEnableLogging()) {
-                ToxPk selfPk = Core::getInstance()->getSelfPublicKey();
-                ToxPk persistentId = group->getPersistentId();
+                ContactIdPtr selfPk = std::make_shared<const ToxPk>(Core::getInstance()->getSelfPublicKey());
+                ContactIdPtr persistentId = group->getPersistentId();
                 QString name = Core::getInstance()->getUsername();
-                history->addNewMessage(persistentId, historyPart, selfPk, timestamp, true, name, nullptr);
+                history->addNewMessage(persistentId, historyPart, persistentId, timestamp, true, name, nullptr);
             }
         }
 

@@ -22,6 +22,8 @@
 
 #include "contact.h"
 
+#include "src/core/contactid.h"
+#include "src/core/groupid.h"
 #include "src/core/toxpk.h"
 
 #include <QMap>
@@ -32,11 +34,11 @@ class Group : public Contact
 {
     Q_OBJECT
 public:
-    Group(int groupId, const ToxPk persistentGroupId, const QString& name, bool isAvGroupchat, const QString& selfName);
+    Group(int groupId, const GroupId persistentGroupId, const QString& name, bool isAvGroupchat, const QString& selfName);
 
     bool isAvGroupchat() const;
     uint32_t getId() const override;
-    const ToxPk getPersistentId() const override;
+    ContactIdPtr getPersistentId() const override;
     int getPeersCount() const;
     void regeneratePeerList();
     const QMap<ToxPk, QString>& getPeerList() const;
@@ -70,7 +72,7 @@ private:
     bool hasNewMessages;
     bool userWasMentioned;
     int groupId;
-    const ToxPk persistentGroupId;
+    const GroupId persistentGroupId;
     bool avGroupchat;
 };
 

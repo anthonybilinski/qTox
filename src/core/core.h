@@ -23,6 +23,8 @@
 
 #include "toxfile.h"
 #include "toxid.h"
+#include "toxpk.h"
+#include "groupid.h"
 
 #include "src/core/dhtserver.h"
 #include <tox/tox.h>
@@ -73,11 +75,9 @@ public:
 
     static const QString TOX_EXT;
     static QStringList splitMessage(const QString& message, int maxLen);
-
     QString getPeerName(const ToxPk& id) const;
-
     QVector<uint32_t> getFriendList() const;
-    ToxPk getGroupPersistentId(uint32_t groupNumber);
+    GroupId getGroupPersistentId(uint32_t groupNumber);
     uint32_t getGroupNumberPeers(int groupId) const;
     QString getGroupPeerName(int groupId, int peerId) const;
     ToxPk getGroupPeerPk(int groupId, int peerId) const;
@@ -190,7 +190,7 @@ signals:
     void friendRemoved(uint32_t friendId);
     void friendLastSeenChanged(uint32_t friendId, const QDateTime& dateTime);
 
-    void emptyGroupCreated(int groupnumber, const ToxPk& groupPersistentId, const QString& title = QString());
+    void emptyGroupCreated(int groupnumber, const GroupId& groupPersistentId, const QString& title = QString());
     void groupInviteReceived(const GroupInvite& inviteInfo);
     void groupMessageReceived(int groupnumber, int peernumber, const QString& message, bool isAction);
     void groupNamelistChanged(int groupnumber, int peernumber, uint8_t change);

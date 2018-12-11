@@ -26,7 +26,7 @@
 #include <QTextCharFormat>
 #include <QCalendarWidget>
 
-LoadHistoryDialog::LoadHistoryDialog(const ToxPk& contactId, QWidget* parent)
+LoadHistoryDialog::LoadHistoryDialog(ContactIdPtr contactId, QWidget* parent)
     : QDialog(parent)
     , ui(new Ui::LoadHistoryDialog)
     , contactId(contactId)

@@ -23,8 +23,10 @@
 #include "contact.h"
 #include "src/core/core.h"
 #include "src/core/toxid.h"
+#include "src/core/contactid.h"
 #include <QObject>
 #include <QString>
+#include <memory>
 
 class Friend : public Contact
 {
@@ -47,7 +49,7 @@ public:
 
     const ToxPk& getPublicKey() const;
     uint32_t getId() const override;
-    const ToxPk getPersistentId() const override;
+    ContactIdPtr getPersistentId() const override;
 
     void setStatus(Status s);
     Status getStatus() const;

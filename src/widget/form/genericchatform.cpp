@@ -1069,8 +1069,8 @@ QString GenericChatForm::getMsgAuthorDispName(const ToxPk& authorPk, const QStri
 
 void GenericChatForm::loadHistoryDefaultNum(bool processUndelivered)
 {
-    const ToxPk persistentId = contact->getPersistentId();
-    QList<History::HistMessage> msgs = history->getChatHistoryDefaultNum(persistentId);
+    auto contactId = contact->getPersistentId();
+    QList<History::HistMessage> msgs = history->getChatHistoryDefaultNum(contactId);
     if (!msgs.isEmpty()) {
         earliestMessage = msgs.first().timestamp;
     }
@@ -1095,9 +1095,9 @@ void GenericChatForm::loadHistoryByDateRange(const QDateTime& since, bool proces
         }
     }
 
-    ToxPk persistentId = contact->getPersistentId();
+    auto contactId = contact->getPersistentId();
     earliestMessage = since;
-    QList<History::HistMessage> msgs = history->getChatHistoryFromDate(persistentId, since, now);
+    QList<History::HistMessage> msgs = history->getChatHistoryFromDate(contactId, since, now);
     handleLoadedMessages(msgs, processUndelivered);
 }
 
@@ -1191,10 +1191,10 @@ void GenericChatForm::onLoadHistory()
 
 void GenericChatForm::onExportChat()
 {
-    ToxPk pk = contact->getPersistentId();
+    auto contactId = contact->getPersistentId();
     QDateTime epochStart = QDateTime::fromMSecsSinceEpoch(0);
     QDateTime now = QDateTime::currentDateTime();
-    QList<History::HistMessage> msgs = history->getChatHistoryFromDate(pk, epochStart, now);
+    QList<History::HistMessage> msgs = history->getChatHistoryFromDate(contactId, epochStart, now);
 
     QString path = QFileDialog::getSaveFileName(Q_NULLPTR, tr("Save chat log"));
     if (path.isEmpty()) {
@@ -1230,8 +1230,8 @@ void GenericChatForm::searchInBegin(const QString& phrase, const ParameterSearch
     const bool isAfter = (parameter.period == PeriodSearch::AfterDate);
     if (isFirst || isAfter) {
         if (isFirst || (isAfter && parameter.date < getFirstDate())) {
-            const ToxPk pk = contact->getPersistentId();
-            if ((isFirst || parameter.date >= history->getStartDateChatHistory(pk).date())
+            auto contactId = contact->getPersistentId();
+            if ((isFirst || parameter.date >= history->getStartDateChatHistory(contactId).date())
                 && loadHistory(phrase, parameter)) {
 
                 return;
@@ -1241,8 +1241,8 @@ void GenericChatForm::searchInBegin(const QString& phrase, const ParameterSearch
         onSearchDown(phrase, parameter);
     } else {
         if (parameter.period == PeriodSearch::BeforeDate && parameter.date < getFirstDate()) {
-            const ToxPk pk = contact->getPersistentId();
-            if (parameter.date >= history->getStartDateChatHistory(pk).date()
+            auto contactId = contact->getPersistentId();
+            if (parameter.date >= history->getStartDateChatHistory(contactId).date()
                 && loadHistory(phrase, parameter)) {
                 return;
             }
@@ -1277,9 +1277,9 @@ void GenericChatForm::onSearchUp(const QString& phrase, const ParameterSearch& p
     const bool isSearch = searchInText(phrase, parameter, SearchDirection::Up);
 
     if (!isSearch) {
-        const ToxPk pk = contact->getPersistentId();
+        auto contactId = contact->getPersistentId();
         const QDateTime newBaseDate =
-            history->getDateWhereFindPhrase(pk, earliestMessage, phrase, parameter);
+            history->getDateWhereFindPhrase(contactId, earliestMessage, phrase, parameter);
 
         if (!newBaseDate.isValid()) {
             emit messageNotFoundShow(SearchDirection::Up);
@@ -1300,9 +1300,9 @@ void GenericChatForm::onSearchDown(const QString& phrase, const ParameterSearch&
 }
 bool GenericChatForm::loadHistory(const QString& phrase, const ParameterSearch& parameter)
 {
-    const ToxPk pk = contact->getPersistentId();
+    auto contactId = contact->getPersistentId();
     const QDateTime newBaseDate =
-        history->getDateWhereFindPhrase(pk, earliestMessage, phrase, parameter);
+        history->getDateWhereFindPhrase(contactId, earliestMessage, phrase, parameter);
 
     if (newBaseDate.isValid() && getFirstDate().isValid() && newBaseDate.date() < getFirstDate()) {
         searchAfterLoadHistory = true;

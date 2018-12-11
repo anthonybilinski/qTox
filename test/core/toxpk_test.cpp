@@ -17,6 +17,8 @@
     along with qTox.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "src/core/contactid.h"
+#include "src/core/toxpk.h"
 #include "src/core/toxid.h"
 
 #include <QtTest/QtTest>
@@ -81,19 +83,19 @@ void TestToxPk::copyTest()
 void TestToxPk::publicKeyTest()
 {
     ToxPk pk(testPk);
-    QVERIFY(testPk == pk.getKey());
-    for (int i = 0; i < ToxPk::getPkSize(); i++) {
-        QVERIFY(testPkArray[i] == pk.getBytes()[i]);
+    QVERIFY(testPk == pk.getByteArray());
+    for (int i = 0; i < pk.getSize(); i++) {
+        QVERIFY(testPkArray[i] == pk.getData()[i]);
     }
 }
 
 void TestToxPk::hashableTest()
 {
-    ToxPk pk1{testPkArray};
-    ToxPk pk2{testPk};
-    QVERIFY(qHash(pk1) == qHash(pk2));
-    ToxPk pk3{echoPk};
-    QVERIFY(qHash(pk1) != qHash(pk3));
+    ContactIdPtr ct1 = std::make_shared<ToxPk>(testPkArray);
+    ContactIdPtr ct2 = std::make_shared<ToxPk>(testPk);
+    QVERIFY(qHash(ct1) == qHash(ct2));
+    ContactIdPtr ct3 = std::make_shared<ToxPk>(echoPk);
+    QVERIFY(qHash(ct1) != qHash(ct3));
 }
 
 QTEST_GUILESS_MAIN(TestToxPk)

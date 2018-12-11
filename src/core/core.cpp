@@ -386,7 +386,7 @@ void Core::bootstrapDht()
         ToxPk pk = ToxId{dhtServer.userId}.getPublicKey();
 
 
-        const uint8_t* pkPtr = reinterpret_cast<const uint8_t*>(pk.getBytes());
+        const uint8_t* pkPtr = pk.getData();
 
         if (!tox_bootstrap(tox.get(), address.constData(), dhtServer.port, pkPtr, nullptr)) {
             qDebug() << "Error bootstrapping from " + dhtServer.name;
@@ -534,7 +534,7 @@ void Core::acceptFriendRequest(const ToxPk& friendPk)
 {
     QMutexLocker ml{coreLoopLock.get()};
     // TODO: error handling
-    uint32_t friendId = tox_friend_add_norequest(tox.get(), friendPk.getBytes(), nullptr);
+    uint32_t friendId = tox_friend_add_norequest(tox.get(), friendPk.getData(), nullptr);
     if (friendId == std::numeric_limits<uint32_t>::max()) {
         emit failedToAddFriend(friendPk);
     } else {
@@ -1113,11 +1113,11 @@ bool Core::parsePeerQueryError(Tox_Err_Conference_Peer_Query error) const
     }
 }
 
-ToxPk Core::getGroupPersistentId(uint32_t groupNumber) {
+GroupId Core::getGroupPersistentId(uint32_t groupNumber) {
     size_t conferenceIdSize = TOX_CONFERENCE_UID_SIZE;
     QByteArray groupPersistentId(conferenceIdSize, Qt::Uninitialized);
     if (tox_conference_get_id(tox.get(), groupNumber, reinterpret_cast<uint8_t*>(groupPersistentId.data()))) {
-        return ToxPk{groupPersistentId};
+        return GroupId{groupPersistentId};
     } else {
         qCritical() << "Failed to get conference ID of group" << groupNumber;
         return {};
@@ -1408,7 +1408,7 @@ bool Core::hasFriendWithPublicKey(const ToxPk& publicKey) const
     }
 
     // TODO: error handling
-    uint32_t friendId = tox_friend_by_public_key(tox.get(), publicKey.getBytes(), nullptr);
+    uint32_t friendId = tox_friend_by_public_key(tox.get(), publicKey.getData(), nullptr);
     return friendId != std::numeric_limits<uint32_t>::max();
 }
 
@@ -1485,7 +1485,7 @@ QString Core::getPeerName(const ToxPk& id) const
     QMutexLocker ml{coreLoopLock.get()};
 
     QString name;
-    uint32_t friendId = tox_friend_by_public_key(tox.get(), id.getBytes(), nullptr);
+    uint32_t friendId = tox_friend_by_public_key(tox.get(), id.getData(), nullptr);
     if (friendId == std::numeric_limits<uint32_t>::max()) {
         qWarning() << "getPeerName: No such peer";
         return name;

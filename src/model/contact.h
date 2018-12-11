@@ -20,10 +20,10 @@
 #ifndef CONTACT_H
 #define CONTACT_H
 
+#include "src/core/contactid.h"
 #include <QObject>
 #include <QString>
-
-#include <src/core/toxpk.h>
+#include <memory>
 
 class Contact : public QObject
 {
@@ -34,8 +34,7 @@ public:
     virtual void setName(const QString& name) = 0;
     virtual QString getDisplayedName() const = 0;
     virtual uint32_t getId() const = 0;
-    virtual const ToxPk getPersistentId() const = 0;
-
+    virtual ContactIdPtr getPersistentId() const = 0;
     virtual void setEventFlag(bool flag) = 0;
     virtual bool getEventFlag() const = 0;
 

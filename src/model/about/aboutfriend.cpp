@@ -104,7 +104,7 @@ bool AboutFriend::clearHistory()
     const ToxPk pk = f->getPublicKey();
     History* const history = Nexus::getProfile()->getHistory();
     if (history) {
-        history->removeContactHistory(pk);
+        history->removeContactHistory(std::make_shared<const ToxPk>(pk));
         return true;
     }
 
@@ -116,7 +116,7 @@ bool AboutFriend::isHistoryExistence()
     History* const history = Nexus::getProfile()->getHistory();
     if (history) {
         const ToxPk pk = f->getPublicKey();
-        return history->isHistoryExistence(pk);
+        return history->isHistoryExistence(std::make_shared<const ToxPk>(pk));
     }
 
     return false;

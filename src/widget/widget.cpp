@@ -1217,7 +1217,7 @@ void Widget::onFriendMessageReceived(int friendId, const QString& message, bool 
         if (isAction) {
             text = ChatForm::ACTION_PREFIX + text;
         }
-        profile->getHistory()->addNewMessage(publicKey, text, publicKey, timestamp, true, name);
+        profile->getHistory()->addNewMessage(std::make_shared<const ToxPk>(publicKey), text, std::make_shared<const ToxPk>(publicKey), timestamp, true, name);
     }
 
     newFriendMessageAlert(friendId);
@@ -1751,7 +1751,7 @@ void Widget::onGroupMessageReceived(int groupnumber, int peernumber, const QStri
     QDateTime timestamp = QDateTime::currentDateTime();
     Profile* profile = Nexus::getProfile();
     if (profile->isHistoryEnabled()) {
-        ToxPk persistentId = g->getPersistentId();
+        ContactIdPtr contactId = g->getPersistentId();
         auto peerList = g->getPeerList();
         auto it = peerList.find(author);
         if (it == peerList.end()) {
@@ -1764,7 +1764,7 @@ void Widget::onGroupMessageReceived(int groupnumber, int peernumber, const QStri
         if (isAction) {
             text = ChatForm::ACTION_PREFIX + text;
         }
-        profile->getHistory()->addNewMessage(persistentId, text, author, timestamp, true, authorName);
+        profile->getHistory()->addNewMessage(contactId, text, std::make_shared<const ToxPk>(author), timestamp, true, authorName);
     }
 
     newGroupMessageAlert(groupId, targeted || Settings::getInstance().getGroupAlwaysNotify());
@@ -1879,7 +1879,7 @@ void Widget::removeGroup(int groupId)
     removeGroup(GroupList::findGroup(groupId));
 }
 
-Group* Widget::createGroup(int groupId, const ToxPk& groupPersistentId)
+Group* Widget::createGroup(int groupId, const GroupId& groupPersistentId)
 {
     Group* g = GroupList::findGroup(groupId);
     if (g) {
@@ -1924,7 +1924,7 @@ Group* Widget::createGroup(int groupId, const ToxPk& groupPersistentId)
     return newgroup;
 }
 
-void Widget::onEmptyGroupCreated(int groupId, const ToxPk& groupPersistentId, const QString& title)
+void Widget::onEmptyGroupCreated(int groupId, const GroupId& groupPersistentId, const QString& title)
 {
     Group* group = createGroup(groupId, groupPersistentId);
     if (!group) {
