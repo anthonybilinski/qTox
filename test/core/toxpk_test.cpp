@@ -91,11 +91,11 @@ void TestToxPk::publicKeyTest()
 
 void TestToxPk::hashableTest()
 {
-    ContactIdPtr ct1 = std::make_shared<ToxPk>(testPkArray);
-    ContactIdPtr ct2 = std::make_shared<ToxPk>(testPk);
-    QVERIFY(qHash(ct1) == qHash(ct2));
-    ContactIdPtr ct3 = std::make_shared<ToxPk>(echoPk);
-    QVERIFY(qHash(ct1) != qHash(ct3));
+    ToxPk pk1(testPkArray);
+    ToxPk pk2(testPk);
+    QVERIFY(qHash(pk1) == qHash(pk2));
+    ToxPk pk3(echoPk);
+    QVERIFY(qHash(pk1) != qHash(pk3));
 }
 
 QTEST_GUILESS_MAIN(TestToxPk)

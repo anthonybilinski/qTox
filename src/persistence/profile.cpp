@@ -575,7 +575,7 @@ void Profile::onRequestSent(const ToxPk& friendPk, const QString& message)
     QString inviteStr = Core::tr("/me offers friendship, \"%1\"").arg(message);
     ToxPk selfPk = core->getSelfPublicKey();
     QDateTime datetime = QDateTime::currentDateTime();
-    history->addNewMessage(std::make_shared<const ToxPk>(friendPk), inviteStr, std::make_shared<const ToxPk>(selfPk), datetime, true, QString());
+    history->addNewMessage(friendPk, inviteStr, selfPk, datetime, true, QString());
 }
 
 /**

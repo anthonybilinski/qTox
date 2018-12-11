@@ -1217,7 +1217,7 @@ void Widget::onFriendMessageReceived(int friendId, const QString& message, bool 
         if (isAction) {
             text = ChatForm::ACTION_PREFIX + text;
         }
-        profile->getHistory()->addNewMessage(std::make_shared<const ToxPk>(publicKey), text, std::make_shared<const ToxPk>(publicKey), timestamp, true, name);
+        profile->getHistory()->addNewMessage(publicKey, text, publicKey, timestamp, true, name);
     }
 
     newFriendMessageAlert(friendId);
@@ -1751,7 +1751,7 @@ void Widget::onGroupMessageReceived(int groupnumber, int peernumber, const QStri
     QDateTime timestamp = QDateTime::currentDateTime();
     Profile* profile = Nexus::getProfile();
     if (profile->isHistoryEnabled()) {
-        ContactIdPtr contactId = g->getPersistentId();
+        const ContactId& contactId = g->getPersistentId();
         auto peerList = g->getPeerList();
         auto it = peerList.find(author);
         if (it == peerList.end()) {
@@ -1764,7 +1764,7 @@ void Widget::onGroupMessageReceived(int groupnumber, int peernumber, const QStri
         if (isAction) {
             text = ChatForm::ACTION_PREFIX + text;
         }
-        profile->getHistory()->addNewMessage(contactId, text, std::make_shared<const ToxPk>(author), timestamp, true, authorName);
+        profile->getHistory()->addNewMessage(contactId, text, author, timestamp, true, authorName);
     }
 
     newGroupMessageAlert(groupId, targeted || Settings::getInstance().getGroupAlwaysNotify());

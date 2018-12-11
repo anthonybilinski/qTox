@@ -75,36 +75,36 @@ public:
 
     bool isValid();
 
-    bool isHistoryExistence(ContactIdPtr contactId);
+    bool isHistoryExistence(const ContactId& contactId);
 
     void eraseHistory();
-    void removeContactHistory(ContactIdPtr contactId);
-    void removeGroupHistory(ContactIdPtr groupPersistentId);
-    void addNewMessage(ContactIdPtr contactId, const QString& message, ContactIdPtr sender,
+    void removeContactHistory(const ContactId& contactId);
+    void removeGroupHistory(const ContactId& groupPersistentId);
+    void addNewMessage(const ContactId& contactId, const QString& message, const ContactId& sender,
                        const QDateTime& time, bool isSent, QString dispName,
                        const std::function<void(int64_t)>& insertIdCallback = {});
 
-    QList<HistMessage> getChatHistoryFromDate(ContactIdPtr contactId, const QDateTime& from,
+    QList<HistMessage> getChatHistoryFromDate(const ContactId& contactId, const QDateTime& from,
                                               const QDateTime& to);
-    QList<HistMessage> getChatHistoryDefaultNum(ContactIdPtr contactId);
-    QList<DateMessages> getChatHistoryCounts(ContactIdPtr contactId, const QDate& from, const QDate& to);
-    QDateTime getDateWhereFindPhrase(ContactIdPtr contactId, const QDateTime& from, QString phrase,
+    QList<HistMessage> getChatHistoryDefaultNum(const ContactId& contactId);
+    QList<DateMessages> getChatHistoryCounts(const ContactId& contactId, const QDate& from, const QDate& to);
+    QDateTime getDateWhereFindPhrase(const ContactId& contactId, const QDateTime& from, QString phrase,
                                      const ParameterSearch& parameter);
-    QDateTime getStartDateChatHistory(ContactIdPtr contactId);
+    QDateTime getStartDateChatHistory(const ContactId& contactId);
 
     void markAsSent(qint64 messageId);
 
 protected:
     QVector<RawDatabase::Query>
-    generateNewMessageQueries(ContactIdPtr contactId, const QString& message,
-                              ContactIdPtr sender, const QDateTime& time, bool isSent,
+    generateNewMessageQueries(const ContactId& contactId, const QString& message,
+                              const ContactId& sender, const QDateTime& time, bool isSent,
                               QString dispName, std::function<void(int64_t)> insertIdCallback = {});
 
 private:
-    QList<HistMessage> getChatHistory(ContactIdPtr contactId, const QDateTime& from,
+    QList<HistMessage> getChatHistory(const ContactId& contactId, const QDateTime& from,
                                       const QDateTime& to, int numMessages);
     std::shared_ptr<RawDatabase> db;
-    QHash<ContactIdPtr, int64_t> peers;
+    QHash<const ContactId&, int64_t> peers;
 };
 
 #endif // HISTORY_H

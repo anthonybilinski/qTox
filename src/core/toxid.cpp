@@ -132,6 +132,7 @@ void ToxId::constructToxId(const QByteArray& rawId)
     } else if (rawId.length() == TOX_ADDRESS_SIZE && isToxId(rawId.toHex().toUpper())) {
         toxId = QByteArray(rawId); // construct from full toxid
     } else {
+        assert(false);
         toxId = QByteArray(); // invalid id
     }
 }

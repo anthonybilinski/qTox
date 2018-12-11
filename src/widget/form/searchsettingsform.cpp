@@ -3,10 +3,14 @@
 #include "src/persistence/settings.h"
 #include "src/widget/style.h"
 #include "src/widget/form/loadhistorydialog.h"
+#include "src/model/contact.h"
 
-SearchSettingsForm::SearchSettingsForm(QWidget *parent) :
+class Contact;
+
+SearchSettingsForm::SearchSettingsForm(const Contact* contact, QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::SearchSettingsForm)
+    ui(new Ui::SearchSettingsForm),
+    contact(contact)
 {
     ui->setupUi(this);
 
@@ -137,7 +141,7 @@ void SearchSettingsForm::onRegularClicked(const bool checked)
 
 void SearchSettingsForm::onChoiceDate()
 {
-    LoadHistoryDialog dlg;
+    LoadHistoryDialog dlg(contact->getPersistentId());
     dlg.setTitle(tr("Select Date Dialog"));
     dlg.setInfoLabel(tr("Select a date"));
     if (dlg.exec()) {

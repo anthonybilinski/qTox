@@ -49,7 +49,7 @@ public:
 
     const ToxPk& getPublicKey() const;
     uint32_t getId() const override;
-    ContactIdPtr getPersistentId() const override;
+    const ContactId& getPersistentId() const override;
 
     void setStatus(Status s);
     Status getStatus() const;

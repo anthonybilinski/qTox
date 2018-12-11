@@ -65,7 +65,7 @@ History::History(std::shared_ptr<RawDatabase> db)
     // Cache our current peers
     db->execLater(RawDatabase::Query{"SELECT public_key, id FROM peers;",
                                      [this](const QVector<QVariant>& row) {
-                                         peers[std::make_shared<ToxPk>(ToxPk{row[0].toByteArray()})] = row[1].toInt();
+                                         peers[ToxPk{row[0].toByteArray()}] = row[1].toInt();
                                      }});
 }
 
@@ -94,7 +94,7 @@ bool History::isValid()
  * @param contactId
  * @return True if has, false otherwise.
  */
-bool History::isHistoryExistence(ContactIdPtr contactId)
+bool History::isHistoryExistence(const ContactId& contactId)
 {
     return !getChatHistoryDefaultNum(contactId).isEmpty();
 }
@@ -119,7 +119,7 @@ void History::eraseHistory()
  * @brief Erases the chat history with one contact.
  * @param contactId Contact persistent id to erase.
  */
-void History::removeContactHistory(ContactIdPtr contactId)
+void History::removeContactHistory(const ContactId& contactId)
 {
     if (!isValid()) {
         return;
@@ -169,8 +169,8 @@ void History::removeContactHistory(ContactIdPtr contactId)
  * @param insertIdCallback Function, called after query execution.
  */
 QVector<RawDatabase::Query>
-History::generateNewMessageQueries(ContactIdPtr contactId, const QString& message,
-                                   ContactIdPtr sender, const QDateTime& time, bool isSent,
+History::generateNewMessageQueries(const ContactId& contactId, const QString& message,
+                                   const ContactId& sender, const QDateTime& time, bool isSent,
                                    QString dispName, std::function<void(int64_t)> insertIdCallback)
 {
     QVector<RawDatabase::Query> queries;
@@ -189,7 +189,7 @@ History::generateNewMessageQueries(ContactIdPtr contactId, const QString& messag
         peers[contactId] = peerId;
         queries += RawDatabase::Query(("INSERT INTO peers (id, public_key) "
                                        "VALUES (%1, '"
-                                       + contactId->toString() + "');")
+                                       + contactId.toString() + "');")
                                           .arg(peerId));
     }
 
@@ -207,7 +207,7 @@ History::generateNewMessageQueries(ContactIdPtr contactId, const QString& messag
         peers[sender] = senderId;
         queries += RawDatabase::Query{("INSERT INTO peers (id, public_key) "
                                        "VALUES (%1, '"
-                                       + sender->toString() + "');")
+                                       + sender.toString() + "');")
                                           .arg(senderId)};
     }
 
@@ -250,7 +250,7 @@ History::generateNewMessageQueries(ContactIdPtr contactId, const QString& messag
  * @param dispName Name, which should be displayed.
  * @param insertIdCallback Function, called after query execution.
  */
-void History::addNewMessage(ContactIdPtr contactId, const QString& message, ContactIdPtr sender,
+void History::addNewMessage(const ContactId& contactId, const QString& message, const ContactId& sender,
                             const QDateTime& time, bool isSent, QString dispName,
                             const std::function<void(int64_t)>& insertIdCallback)
 {
@@ -273,7 +273,7 @@ void History::addNewMessage(ContactIdPtr contactId, const QString& message, Cont
  * @param to End of period to fetch.
  * @return List of messages.
  */
-QList<History::HistMessage> History::getChatHistoryFromDate(ContactIdPtr contactId, const QDateTime& from,
+QList<History::HistMessage> History::getChatHistoryFromDate(const ContactId& contactId, const QDateTime& from,
                                                     const QDateTime& to)
 {
     if (!isValid()) {
@@ -287,7 +287,7 @@ QList<History::HistMessage> History::getChatHistoryFromDate(ContactIdPtr contact
  * @param contactId Contact persistent id to fetch.
  * @return List of messages.
  */
-QList<History::HistMessage> History::getChatHistoryDefaultNum(ContactIdPtr contactId)
+QList<History::HistMessage> History::getChatHistoryDefaultNum(const ContactId& contactId)
 {
     if (!isValid()) {
         return {};
@@ -303,7 +303,7 @@ QList<History::HistMessage> History::getChatHistoryDefaultNum(ContactIdPtr conta
  * @param to End of period to fetch.
  * @return List of structs containing days offset and message count for that day.
  */
-QList<History::DateMessages> History::getChatHistoryCounts(ContactIdPtr contactId, const QDate& from,
+QList<History::DateMessages> History::getChatHistoryCounts(const ContactId& contactId, const QDate& from,
                                                            const QDate& to)
 {
     if (!isValid()) {
@@ -329,7 +329,7 @@ QList<History::DateMessages> History::getChatHistoryCounts(ContactIdPtr contactI
                 "GROUP BY day;")
             .arg(fromTime.toMSecsSinceEpoch())
             .arg(toTime.toMSecsSinceEpoch())
-            .arg(contactId->toString())
+            .arg(contactId.toString())
             .arg(QDateTime::fromMSecsSinceEpoch(0).daysTo(fromTime));
 
     db->execNow({queryText, rowCallback});
@@ -345,7 +345,7 @@ QList<History::DateMessages> History::getChatHistoryCounts(ContactIdPtr contactI
  * @param parameter for search
  * @return date of the message where the phrase was found
  */
-QDateTime History::getDateWhereFindPhrase(ContactIdPtr contactId, const QDateTime& from, QString phrase, const ParameterSearch& parameter)
+QDateTime History::getDateWhereFindPhrase(const ContactId& contactId, const QDateTime& from, QString phrase, const ParameterSearch& parameter)
 {
     QDateTime result;
     auto rowCallback = [&result](const QVector<QVariant>& row) {
@@ -406,7 +406,7 @@ QDateTime History::getDateWhereFindPhrase(ContactIdPtr contactId, const QDateTim
                 "WHERE chat.public_key='%1' "
                 "AND %2 "
                 "%3")
-            .arg(contactId->toString())
+            .arg(contactId.toString())
             .arg(message)
             .arg(period);
 
@@ -420,7 +420,7 @@ QDateTime History::getDateWhereFindPhrase(ContactIdPtr contactId, const QDateTim
  * @param contactId Contact persistent id
  * @return start date of correspondence
  */
-QDateTime History::getStartDateChatHistory(ContactIdPtr contactId)
+QDateTime History::getStartDateChatHistory(const ContactId& contactId)
 {
     QDateTime result;
     auto rowCallback = [&result](const QVector<QVariant>& row) {
@@ -433,7 +433,7 @@ QDateTime History::getStartDateChatHistory(ContactIdPtr contactId)
                     "LEFT JOIN faux_offline_pending ON history.id = faux_offline_pending.id "
                     "JOIN peers chat ON chat_id = chat.id "
                     "WHERE chat.public_key='%1' ORDER BY timestamp ASC LIMIT 1;")
-            .arg(contactId->toString());
+            .arg(contactId.toString());
 
     db->execNow({queryText, rowCallback});
 
@@ -464,7 +464,7 @@ void History::markAsSent(qint64 messageId)
  * @param numMessages max number of messages to fetch.
  * @return List of messages.
  */
-QList<History::HistMessage> History::getChatHistory(ContactIdPtr contactId, const QDateTime& from,
+QList<History::HistMessage> History::getChatHistory(const ContactId& contactId, const QDateTime& from,
                                                     const QDateTime& to, int numMessages)
 {
     QList<HistMessage> messages;
@@ -493,7 +493,7 @@ QList<History::HistMessage> History::getChatHistory(ContactIdPtr contactId, cons
                 "WHERE timestamp BETWEEN %1 AND %2 AND chat.public_key='%3'")
             .arg(from.toMSecsSinceEpoch())
             .arg(to.toMSecsSinceEpoch())
-            .arg(contactId->toString());
+            .arg(contactId.toString());
     if (numMessages) {
         queryText = "SELECT * FROM (" + queryText +
                 QString(" ORDER BY history.id DESC limit %1) AS T1 ORDER BY T1.id ASC;").arg(numMessages);

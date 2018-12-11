@@ -138,9 +138,9 @@ uint32_t Group::getId() const
     return groupId;
 }
 
-ContactIdPtr Group::getPersistentId() const
+const ContactId& Group::getPersistentId() const
 {
-    return std::make_shared<const GroupId>(persistentGroupId);
+    return persistentGroupId;
 }
 
 int Group::getPeersCount() const

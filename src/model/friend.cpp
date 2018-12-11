@@ -129,9 +129,9 @@ uint32_t Friend::getId() const
     return friendId;
 }
 
-ContactIdPtr Friend::getPersistentId() const
+const ContactId& Friend::getPersistentId() const
 {
-    return std::make_shared<ToxPk>(friendPk);
+    return friendPk;
 }
 
 void Friend::setEventFlag(bool flag)

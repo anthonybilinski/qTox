@@ -38,7 +38,7 @@ public:
 
     bool isAvGroupchat() const;
     uint32_t getId() const override;
-    ContactIdPtr getPersistentId() const override;
+    const ContactId& getPersistentId() const override;
     int getPeersCount() const;
     void regeneratePeerList();
     const QMap<ToxPk, QString>& getPeerList() const;

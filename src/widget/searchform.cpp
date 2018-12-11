@@ -35,7 +35,7 @@ static std::array<QString, 3> STATE_NAME = {
     QStringLiteral("red"),
 };
 
-SearchForm::SearchForm(QWidget* parent) : QWidget(parent)
+SearchForm::SearchForm(const Contact* contact, QWidget* parent) : QWidget(parent)
 {
     QVBoxLayout* layout = new QVBoxLayout();
     QHBoxLayout* layoutNavigation = new QHBoxLayout();
@@ -43,7 +43,7 @@ SearchForm::SearchForm(QWidget* parent) : QWidget(parent)
     QSpacerItem *lSpacer = new QSpacerItem(20, 20, QSizePolicy::Expanding, QSizePolicy::Ignored);
     QSpacerItem *rSpacer = new QSpacerItem(20, 20, QSizePolicy::Expanding, QSizePolicy::Ignored);
     searchLine = new LineEdit();
-    settings = new SearchSettingsForm();
+    settings = new SearchSettingsForm(contact);
     messageLabel = new QLabel();
 
     settings->setVisible(false);

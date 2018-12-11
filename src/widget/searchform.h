@@ -23,6 +23,7 @@
 #include <QWidget>
 #include <QLineEdit>
 #include "searchtypes.h"
+#include "src/model/contact.h"
 
 class QPushButton;
 class QLabel;
@@ -39,7 +40,7 @@ public:
         Active = 2,      // Red
     };
 
-    explicit SearchForm(QWidget* parent = nullptr);
+    explicit SearchForm(const Contact* contact, QWidget* parent = nullptr);
     void removeSearchPhrase();
     QString getSearchPhrase() const;
     ParameterSearch getParameterSearch();

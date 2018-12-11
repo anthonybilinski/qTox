@@ -26,7 +26,7 @@
 #include <QTextCharFormat>
 #include <QCalendarWidget>
 
-LoadHistoryDialog::LoadHistoryDialog(ContactIdPtr contactId, QWidget* parent)
+LoadHistoryDialog::LoadHistoryDialog(const ContactId& contactId, QWidget* parent)
     : QDialog(parent)
     , ui(new Ui::LoadHistoryDialog)
     , contactId(contactId)
@@ -35,13 +35,6 @@ LoadHistoryDialog::LoadHistoryDialog(ContactIdPtr contactId, QWidget* parent)
     highlightDates(QDate::currentDate().year(), QDate::currentDate().month());
     connect(ui->fromDate, &QCalendarWidget::currentPageChanged, this,
             &LoadHistoryDialog::highlightDates);
-}
-
-LoadHistoryDialog::LoadHistoryDialog(QWidget* parent)
-    : QDialog(parent)
-    , ui(new Ui::LoadHistoryDialog)
-{
-    ui->setupUi(this);
 }
 
 LoadHistoryDialog::~LoadHistoryDialog()

@@ -4,6 +4,8 @@
 #include <QWidget>
 #include "src/widget/searchtypes.h"
 
+class Contact;
+
 namespace Ui {
 class SearchSettingsForm;
 }
@@ -13,7 +15,7 @@ class SearchSettingsForm : public QWidget
     Q_OBJECT
 
 public:
-    explicit SearchSettingsForm(QWidget *parent = nullptr);
+    explicit SearchSettingsForm(const Contact* contact, QWidget *parent = nullptr);
     ~SearchSettingsForm();
 
     ParameterSearch getParameterSearch();
@@ -22,6 +24,7 @@ private:
     Ui::SearchSettingsForm *ui;
     QDate startDate;
     bool isUpdate{false};
+    const Contact* contact;
 
     void updateStartDateLabel();
     void setUpdate(const bool isUpdate);

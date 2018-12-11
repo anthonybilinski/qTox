@@ -33,8 +33,7 @@ class LoadHistoryDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit LoadHistoryDialog(ContactIdPtr contactId, QWidget* parent = nullptr);
-    explicit LoadHistoryDialog(QWidget* parent = nullptr);
+    explicit LoadHistoryDialog(const ContactId& contactId, QWidget* parent = nullptr);
     ~LoadHistoryDialog();
 
     QDateTime getFromDate();
@@ -46,7 +45,7 @@ public slots:
 
 private:
     Ui::LoadHistoryDialog* ui;
-    ContactIdPtr contactId;
+    const ContactId& contactId;
 };
 
 #endif // LOADHISTORYDIALOG_H

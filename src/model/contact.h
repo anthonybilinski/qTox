@@ -34,7 +34,7 @@ public:
     virtual void setName(const QString& name) = 0;
     virtual QString getDisplayedName() const = 0;
     virtual uint32_t getId() const = 0;
-    virtual ContactIdPtr getPersistentId() const = 0;
+    virtual const ContactId& getPersistentId() const = 0;
     virtual void setEventFlag(bool flag) = 0;
     virtual bool getEventFlag() const = 0;
 
