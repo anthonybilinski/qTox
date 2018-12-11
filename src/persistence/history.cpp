@@ -65,7 +65,7 @@ History::History(std::shared_ptr<RawDatabase> db)
     // Cache our current peers
     db->execLater(RawDatabase::Query{"SELECT public_key, id FROM peers;",
                                      [this](const QVector<QVariant>& row) {
-                                         peers[ToxPk{row[0].toByteArray()}] = row[1].toInt();
+                                         peers[ToxPk{QByteArray::fromHex(row[0].toString().toLatin1())}] = row[1].toInt();
                                      }});
 }
 
