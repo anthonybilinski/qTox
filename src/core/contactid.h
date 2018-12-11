@@ -10,6 +10,12 @@
 class ContactId
 {
 public:
+    enum class Type
+    {
+        Friend,
+        Group
+    };
+
     virtual ~ContactId() = default;
     ContactId& operator=(const ContactId& other) = default;
     ContactId& operator=(ContactId&& other) = default;
@@ -21,6 +27,7 @@ public:
     const uint8_t* getData() const;
     bool isEmpty() const;
     virtual int getSize() const = 0;
+    virtual Type getType() const = 0;
 
 protected:
     ContactId();
@@ -32,7 +39,5 @@ inline uint qHash(const ContactId& id)
 {
     return qHash(id.getByteArray());
 }
-
-using ContactIdPtr = std::shared_ptr<const ContactId>;
 
 #endif // CONTACTID_H

@@ -33,7 +33,7 @@
  * @class History
  * @brief Interacts with the profile database to save the chat history.
  *
- * @var QHash<QString, int64_t> History::peers
+ * @var QHash<QString, int64_t> History::contacts
  * @brief Maps Contact persistent id to unique IDs by index.
  * Caches mappings to speed up message saving.
  */
@@ -55,6 +55,8 @@ History::History(std::shared_ptr<RawDatabase> db)
     db->execLater(
         "CREATE TABLE IF NOT EXISTS peers (id INTEGER PRIMARY KEY, public_key TEXT NOT NULL "
         "UNIQUE);"
+        "CREATE TABLE IF NOT EXISTS groups (id INTEGER PRIMARY KEY, public_key TEXT NOT NULL "
+        "UNIQUE);"
         "CREATE TABLE IF NOT EXISTS aliases (id INTEGER PRIMARY KEY, owner INTEGER,"
         "display_name BLOB NOT NULL, UNIQUE(owner, display_name));"
         "CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY, timestamp INTEGER NOT NULL, "
@@ -62,10 +64,14 @@ History::History(std::shared_ptr<RawDatabase> db)
         "message BLOB NOT NULL);"
         "CREATE TABLE IF NOT EXISTS faux_offline_pending (id INTEGER PRIMARY KEY);");
 
-    // Cache our current peers
+    // Cache our current contacts
     db->execLater(RawDatabase::Query{"SELECT public_key, id FROM peers;",
                                      [this](const QVector<QVariant>& row) {
                                          peers[ToxPk{QByteArray::fromHex(row[0].toString().toLatin1())}] = row[1].toInt();
+                                     }});
+    db->execLater(RawDatabase::Query{"SELECT public_key, id FROM groups;",
+                                     [this](const QVector<QVariant>& row) {
+                                         groups[GroupId{QByteArray::fromHex(row[0].toString().toLatin1())}] = row[1].toInt();
                                      }});
 }
 
@@ -111,7 +117,8 @@ void History::eraseHistory()
     db->execNow("DELETE FROM faux_offline_pending;"
                 "DELETE FROM history;"
                 "DELETE FROM aliases;"
-                "DELETE FROM peers;"
+                "DELETE FROM contacts;"
+                "DELETE FROM groups;"
                 "VACUUM;");
 }
 
@@ -125,36 +132,24 @@ void History::removeContactHistory(const ContactId& contactId)
         return;
     }
 
-    if (!peers.contains(contactId)) {
-        assert(false);
-        qCritical() << "attempted to remove contact history of unknown peer, ignoring";
-        return;
-    }
-
-    int64_t id = peers[contactId];
-
-    QString queryText = QString(
-        // remove select chat (friend or group)
-        "DELETE FROM faux_offline_pending "
-        "WHERE faux_offline_pending.id IN ( "
-        "    SELECT faux_offline_pending.id FROM faux_offline_pending "
-        "    LEFT JOIN history ON faux_offline_pending.id = history.id "
-        "    WHERE chat_id=%1 "
-        "); "
-        "DELETE FROM history WHERE chat_id=%1; "
-        // then if there are peers who no longer author any messages, we don't need their alias
-        "DELETE FROM aliases WHERE "
-        "aliases.id NOT IN (SELECT DISTINCT sender_alias FROM history); "
-        // if it's a friend that now doesn't author any messages (no alias) or a group that now doesn't exist,
-        // remove it as a peer
-        "DELETE FROM peers WHERE "
-        "peers.id NOT IN (SELECT DISTINCT owner FROM aliases UNION SELECT chat_id FROM history); "
-        "VACUUM;")
-        .arg(id);
-    if (db->execNow(queryText)) {
-        peers.remove(contactId);
-    } else {
-        qWarning() << "Failed to remove contact's history";
+    int64_t id = contacts[contactId];
+    switch (contactId.getType()) {
+    case ContactId::Type::Friend:
+        auto id = peers.find(contactId);
+        if (id == peers.end()) {
+            qCritical() << "attempted to remove friend history of unknown contact, ignoring";
+            return;
+        }
+        removeFriendHistory(*id);
+        break;
+    case ContactId::Type::Group:
+        auto id = groups.find(contactId);
+        if (id == groups.end()) {
+            qCritical() << "attempted to remove group history of unknown contact, ignoring";
+            return;
+        }
+        removeGroupHistory(*id);
+        break;
     }
 }
 
@@ -174,20 +169,19 @@ History::generateNewMessageQueries(const ContactId& contactId, const QString& me
                                    QString dispName, std::function<void(int64_t)> insertIdCallback)
 {
     QVector<RawDatabase::Query> queries;
-
     // Get the db id of the peer we're chatting with
     int64_t peerId;
-    if (peers.contains(contactId)) {
-        peerId = peers[contactId];
+    if (contacts.contains(contactId)) {
+        peerId = contacts[contactId];
     } else {
-        if (peers.isEmpty()) {
+        if (contacts.isEmpty()) {
             peerId = 0;
         } else {
-            peerId = *std::max_element(peers.begin(), peers.end()) + 1;
+            peerId = *std::max_element(contacts.begin(), contacts.end()) + 1;
         }
 
-        peers[contactId] = peerId;
-        queries += RawDatabase::Query(("INSERT INTO peers (id, public_key) "
+        contacts[contactId] = peerId;
+        queries += RawDatabase::Query(("INSERT INTO contacts (id, public_key) "
                                        "VALUES (%1, '"
                                        + contactId.toString() + "');")
                                           .arg(peerId));
@@ -195,17 +189,17 @@ History::generateNewMessageQueries(const ContactId& contactId, const QString& me
 
     // Get the db id of the sender of the message
     int64_t senderId;
-    if (peers.contains(sender)) {
-        senderId = peers[sender];
+    if (contacts.contains(sender)) {
+        senderId = contacts[sender];
     } else {
-        if (peers.isEmpty()) {
+        if (contacts.isEmpty()) {
             senderId = 0;
         } else {
-            senderId = *std::max_element(peers.begin(), peers.end()) + 1;
+            senderId = *std::max_element(contacts.begin(), contacts.end()) + 1;
         }
 
-        peers[sender] = senderId;
-        queries += RawDatabase::Query{("INSERT INTO peers (id, public_key) "
+        contacts[sender] = senderId;
+        queries += RawDatabase::Query{("INSERT INTO contacts (id, public_key) "
                                        "VALUES (%1, '"
                                        + sender.toString() + "');")
                                           .arg(senderId)};
@@ -324,7 +318,7 @@ QList<History::DateMessages> History::getChatHistoryCounts(const ContactId& cont
     QString queryText =
         QString("SELECT COUNT(history.id), ((timestamp / 1000 / 60 / 60 / 24) - %4 ) AS day "
                 "FROM history "
-                "JOIN peers chat ON chat_id = chat.id "
+                "JOIN contacts chat ON chat_id = chat.id "
                 "WHERE timestamp BETWEEN %1 AND %2 AND chat.public_key='%3'"
                 "GROUP BY day;")
             .arg(fromTime.toMSecsSinceEpoch())
@@ -402,7 +396,7 @@ QDateTime History::getDateWhereFindPhrase(const ContactId& contactId, const QDat
         QStringLiteral("SELECT timestamp "
                 "FROM history "
                 "LEFT JOIN faux_offline_pending ON history.id = faux_offline_pending.id "
-                "JOIN peers chat ON chat_id = chat.id "
+                "JOIN contacts chat ON chat_id = chat.id "
                 "WHERE chat.public_key='%1' "
                 "AND %2 "
                 "%3")
@@ -431,7 +425,7 @@ QDateTime History::getStartDateChatHistory(const ContactId& contactId)
             QStringLiteral("SELECT timestamp "
                     "FROM history "
                     "LEFT JOIN faux_offline_pending ON history.id = faux_offline_pending.id "
-                    "JOIN peers chat ON chat_id = chat.id "
+                    "JOIN contacts chat ON chat_id = chat.id "
                     "WHERE chat.public_key='%1' ORDER BY timestamp ASC LIMIT 1;")
             .arg(contactId.toString());
 
@@ -487,9 +481,9 @@ QList<History::HistMessage> History::getChatHistory(const ContactId& contactId, 
                 "chat.public_key, aliases.display_name, sender.public_key, "
                 "message FROM history "
                 "LEFT JOIN faux_offline_pending ON history.id = faux_offline_pending.id "
-                "JOIN peers chat ON chat_id = chat.id "
+                "JOIN contacts chat ON chat_id = chat.id "
                 "JOIN aliases ON sender_alias = aliases.id "
-                "JOIN peers sender ON aliases.owner = sender.id "
+                "JOIN contacts sender ON aliases.owner = sender.id "
                 "WHERE timestamp BETWEEN %1 AND %2 AND chat.public_key='%3'")
             .arg(from.toMSecsSinceEpoch())
             .arg(to.toMSecsSinceEpoch())
@@ -504,4 +498,51 @@ QList<History::HistMessage> History::getChatHistory(const ContactId& contactId, 
     db->execNow({queryText, rowCallback});
 
     return messages;
+}
+
+void History::removeFriendHistory(const ContactId& contactId)
+{
+
+    QString queryText = QString(
+        // remove select friend's chat
+        "DELETE FROM faux_offline_pending "
+        "WHERE faux_offline_pending.id IN ( "
+        "    SELECT faux_offline_pending.id FROM faux_offline_pending "
+        "    LEFT JOIN history ON faux_offline_pending.id = history.id "
+        "    WHERE chat_id=%1 "
+        "); "
+        "DELETE FROM history WHERE chat_id=%1; "
+        // then if any of their aliases no longer author messages (from remaining groups), remove the alises
+        "DELETE FROM aliases WHERE "
+        "aliases.id NOT IN (SELECT DISTINCT sender_alias FROM history); "
+        // if the friend now doesn't author any messages (no aliases), remove them as a peer
+        "DELETE FROM peers WHERE "
+        "peers.id NOT IN (SELECT DISTINCT owner FROM aliases UNION SELECT chat_id FROM history); "
+        "VACUUM;")
+        .arg(id);
+    if (db->execNow(queryText)) {
+        peers.remove(contactId);
+    } else {
+        qWarning() << "Failed to remove contact's history";
+    }
+}
+
+void History::removeGroupHistory(int64_t id)
+{
+
+    QString queryText = QString(
+        // remove select group's history
+        "DELETE FROM history WHERE chat_id=%1; "
+        // then if there are contacts who no longer author any messages, we don't need their alias
+        "DELETE FROM aliases WHERE "
+        "aliases.id NOT IN (SELECT DISTINCT sender_alias FROM history); "
+        // remove select group ID
+        "DELETE FROM groups WHERE groups.id=%1;"
+        "VACUUM;")
+        .arg(id);
+    if (db->execNow(queryText)) {
+        groups.remove(contactId);
+    } else {
+        qWarning() << "Failed to remove contact's history";
+    }
 }

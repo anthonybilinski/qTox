@@ -22,6 +22,7 @@
 
 #include "src/core/contactid.h"
 #include "src/core/toxpk.h"
+#include "src/core/groupid.h"
 #include "src/persistence/db/rawdatabase.h"
 #include "src/widget/searchtypes.h"
 
@@ -79,7 +80,6 @@ public:
 
     void eraseHistory();
     void removeContactHistory(const ContactId& contactId);
-    void removeGroupHistory(const ContactId& groupPersistentId);
     void addNewMessage(const ContactId& contactId, const QString& message, const ContactId& sender,
                        const QDateTime& time, bool isSent, QString dispName,
                        const std::function<void(int64_t)>& insertIdCallback = {});
@@ -103,8 +103,11 @@ protected:
 private:
     QList<HistMessage> getChatHistory(const ContactId& contactId, const QDateTime& from,
                                       const QDateTime& to, int numMessages);
+    void removeFriendHistory(int64_t id);
+    void removeGroupHistory(int64_t id);
     std::shared_ptr<RawDatabase> db;
-    QHash<const ContactId&, int64_t> peers;
+    QHash<ToxPk, int64_t> peers;
+    QHash<GroupId, int64_t> groups;
 };
 
 #endif // HISTORY_H

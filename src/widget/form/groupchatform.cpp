@@ -183,10 +183,10 @@ void GroupChatForm::sendMessageStr(QString msg)
             // the message ourselves if we're not sending it.
             addSelfMessage(part, timestamp, isAction);
             if (history && Settings::getInstance().getEnableLogging()) {
-                auto selfPk = Core::getInstance()->getSelfPublicKey();
-                auto& persistentId = group->getPersistentId();
+                const ContactId& selfPk = Core::getInstance()->getSelfPublicKey();
+                const ContactId& persistentId = group->getPersistentId();
                 QString name = Core::getInstance()->getUsername();
-                history->addNewMessage(persistentId, historyPart, persistentId, timestamp, true, name, nullptr);
+                history->addNewMessage(persistentId, historyPart, selfPk, timestamp, true, name, nullptr);
             }
         }
 

@@ -13,6 +13,7 @@ public:
     explicit ToxPk(const QByteArray& rawId);
     explicit ToxPk(const uint8_t* rawId);
     int getSize() const override;
+    ContactId::Type getType() const override;
 };
 
 #endif // TOXPK_H
