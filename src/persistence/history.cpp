@@ -53,16 +53,17 @@ History::History(std::shared_ptr<RawDatabase> db)
     }
 
     db->execLater(
-        "CREATE TABLE IF NOT EXISTS peers (id INTEGER PRIMARY KEY, public_key TEXT NOT NULL "
+        "CREATE TABLE IF NOT EXISTS contacts (id INTEGER PRIMARY KEY UNIQUE AUTOINCREMENT);"
+        "CREATE TABLE IF NOT EXISTS peers (id INTEGER PRIMARY KEY FOREIGN KEY REFERENCES contacts(id) UNIQUE, public_key TEXT NOT NULL "
         "UNIQUE);"
-        "CREATE TABLE IF NOT EXISTS groups (id INTEGER PRIMARY KEY, public_key TEXT NOT NULL "
+        "CREATE TABLE IF NOT EXISTS groups (id INTEGER PRIMARY KEY FOREIGN KEY REFERENCES contacts(id) UNIQUE, group_id TEXT NOT NULL "
         "UNIQUE);"
-        "CREATE TABLE IF NOT EXISTS aliases (id INTEGER PRIMARY KEY, owner INTEGER,"
+        "CREATE TABLE IF NOT EXISTS aliases (id INTEGER PRIMARY KEY, owner INTEGER FOREIGN KEY REFERENCES(peers.id),"
         "display_name BLOB NOT NULL, UNIQUE(owner, display_name));"
         "CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY, timestamp INTEGER NOT NULL, "
-        "chat_id INTEGER NOT NULL, sender_alias INTEGER NOT NULL, "
+        "chat_id INTEGER FOREIGN KEY contacts(id) NOT NULL, sender_alias INTEGER FOREIGN KEY aliases(id) NOT NULL, "
         "message BLOB NOT NULL);"
-        "CREATE TABLE IF NOT EXISTS faux_offline_pending (id INTEGER PRIMARY KEY);");
+        "CREATE TABLE IF NOT EXISTS faux_offline_pending (id INTEGER PRIMARY KEY FOREIGN KEY REFERENCES history(id));");
 
     // Cache our current contacts
     db->execLater(RawDatabase::Query{"SELECT public_key, id FROM peers;",
@@ -117,7 +118,7 @@ void History::eraseHistory()
     db->execNow("DELETE FROM faux_offline_pending;"
                 "DELETE FROM history;"
                 "DELETE FROM aliases;"
-                "DELETE FROM contacts;"
+                "DELETE FROM peers;"
                 "DELETE FROM groups;"
                 "VACUUM;");
 }
@@ -132,7 +133,6 @@ void History::removeContactHistory(const ContactId& contactId)
         return;
     }
 
-    int64_t id = contacts[contactId];
     switch (contactId.getType()) {
     case ContactId::Type::Friend:
         auto id = peers.find(contactId);

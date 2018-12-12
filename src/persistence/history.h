@@ -105,6 +105,7 @@ private:
                                       const QDateTime& to, int numMessages);
     void removeFriendHistory(int64_t id);
     void removeGroupHistory(int64_t id);
+    void getContactId
     std::shared_ptr<RawDatabase> db;
     QHash<ToxPk, int64_t> peers;
     QHash<GroupId, int64_t> groups;
