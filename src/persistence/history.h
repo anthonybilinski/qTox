@@ -80,7 +80,7 @@ public:
 
     void eraseHistory();
     void removeContactHistory(const ContactId& contactId);
-    void addNewMessage(const ContactId& contactId, const QString& message, const ContactId& sender,
+    void addNewMessage(const ContactId& contactId, const QString& message, const ToxPk& sender,
                        const QDateTime& time, bool isSent, QString dispName,
                        const std::function<void(int64_t)>& insertIdCallback = {});
 
@@ -96,16 +96,17 @@ public:
 
 protected:
     QVector<RawDatabase::Query>
-    generateNewMessageQueries(const ContactId& contactId, const QString& message,
-                              const ContactId& sender, const QDateTime& time, bool isSent,
+    generateNewMessageQueries(const ContactId& chatId, const QString& message,
+                              const ToxPk& sender, const QDateTime& time, bool isSent,
                               QString dispName, std::function<void(int64_t)> insertIdCallback = {});
 
 private:
     QList<HistMessage> getChatHistory(const ContactId& contactId, const QDateTime& from,
                                       const QDateTime& to, int numMessages);
-    void removeFriendHistory(int64_t id);
-    void removeGroupHistory(int64_t id);
-    void getContactId
+    int64_t getPeerId(const ToxPk& contactId, QVector<RawDatabase::Query>& queries);
+    int64_t getGroupId(const GroupId& contactId, QVector<RawDatabase::Query>& queries);
+    void removeFriendHistory(const ToxPk& contactId);
+    void removeGroupHistory(const GroupId& contactId);
     std::shared_ptr<RawDatabase> db;
     QHash<ToxPk, int64_t> peers;
     QHash<GroupId, int64_t> groups;

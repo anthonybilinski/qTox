@@ -26,6 +26,7 @@
 #include "settings.h"
 #include "db/rawdatabase.h"
 
+#Include "src/core/groupid.h"
 #include "src/core/contactid.h"
 #include "src/core/toxpk.h"
 
@@ -120,6 +121,7 @@ void History::eraseHistory()
                 "DELETE FROM aliases;"
                 "DELETE FROM peers;"
                 "DELETE FROM groups;"
+                "DELETE FROM contacts;"
                 "VACUUM;");
 }
 
@@ -135,20 +137,10 @@ void History::removeContactHistory(const ContactId& contactId)
 
     switch (contactId.getType()) {
     case ContactId::Type::Friend:
-        auto id = peers.find(contactId);
-        if (id == peers.end()) {
-            qCritical() << "attempted to remove friend history of unknown contact, ignoring";
-            return;
-        }
-        removeFriendHistory(*id);
+        removeFriendHistory(static_cast<const ToxPk&>(ContactId));
         break;
     case ContactId::Type::Group:
-        auto id = groups.find(contactId);
-        if (id == groups.end()) {
-            qCritical() << "attempted to remove group history of unknown contact, ignoring";
-            return;
-        }
-        removeGroupHistory(*id);
+        removeGroupHistory(static_cast<const GroupId&>(ContactId));
         break;
     }
 }
@@ -164,50 +156,23 @@ void History::removeContactHistory(const ContactId& contactId)
  * @param insertIdCallback Function, called after query execution.
  */
 QVector<RawDatabase::Query>
-History::generateNewMessageQueries(const ContactId& contactId, const QString& message,
-                                   const ContactId& sender, const QDateTime& time, bool isSent,
+History::generateNewMessageQueries(const ContactId& chatToxId, const QString& message,
+                                   const ToxPk& author, const QDateTime& time, bool isSent,
                                    QString dispName, std::function<void(int64_t)> insertIdCallback)
 {
     QVector<RawDatabase::Query> queries;
-    // Get the db id of the peer we're chatting with
-    int64_t peerId;
-    if (contacts.contains(contactId)) {
-        peerId = contacts[contactId];
-    } else {
-        if (contacts.isEmpty()) {
-            peerId = 0;
-        } else {
-            peerId = *std::max_element(contacts.begin(), contacts.end()) + 1;
-        }
-
-        contacts[contactId] = peerId;
-        queries += RawDatabase::Query(("INSERT INTO contacts (id, public_key) "
-                                       "VALUES (%1, '"
-                                       + contactId.toString() + "');")
-                                          .arg(peerId));
+    int64_t chatId;
+    ContactId::Type chatType = chatToxId.getType();
+    switch (chatType) {
+    case ContactId::Type::Friend:
+        chatId = getPeerId(static_cast<const ToxPk&>(chatToxId), queries);
+        break;
+    case ContactId::Type::Group:
+        chatId = getGroupId(static_cast<const GroupId&>(chatToxId), queries);
+        break;
     }
 
-    // Get the db id of the sender of the message
-    int64_t senderId;
-    if (contacts.contains(sender)) {
-        senderId = contacts[sender];
-    } else {
-        if (contacts.isEmpty()) {
-            senderId = 0;
-        } else {
-            senderId = *std::max_element(contacts.begin(), contacts.end()) + 1;
-        }
-
-        contacts[sender] = senderId;
-        queries += RawDatabase::Query{("INSERT INTO contacts (id, public_key) "
-                                       "VALUES (%1, '"
-                                       + sender.toString() + "');")
-                                          .arg(senderId)};
-    }
-
-    queries += RawDatabase::Query(
-        QString("INSERT OR IGNORE INTO aliases (owner, display_name) VALUES (%1, ?);").arg(senderId),
-        {dispName.toUtf8()});
+    int64_t authorId = getPeerId(author, queries);
 
     // If the alias already existed, the insert will ignore the conflict and last_insert_rowid()
     // will return garbage,
@@ -221,14 +186,19 @@ History::generateNewMessageQueries(const ContactId& contactId, const QString& me
                                "  ELSE last_insert_rowid() END"
                                "));")
                                .arg(time.toMSecsSinceEpoch())
-                               .arg(peerId)
-                               .arg(senderId),
+                               .arg(chatId)
+                               .arg(authorId),
                            {message.toUtf8(), dispName.toUtf8()}, insertIdCallback);
 
     if (!isSent) {
+        if (chatType == ContactId::Type::Friend) {
         queries += RawDatabase::Query{"INSERT INTO faux_offline_pending (id) VALUES ("
                                       "    last_insert_rowid()"
                                       ");"};
+        } else {
+            assert(false);
+            qCritical() << "Attempted to insert faux offline message for group, which is unsupported. Ignoring.";
+        }
     }
 
     return queries;
@@ -244,7 +214,7 @@ History::generateNewMessageQueries(const ContactId& contactId, const QString& me
  * @param dispName Name, which should be displayed.
  * @param insertIdCallback Function, called after query execution.
  */
-void History::addNewMessage(const ContactId& contactId, const QString& message, const ContactId& sender,
+void History::addNewMessage(const ContactId& contactId, const QString& message, const ToxPk& sender,
                             const QDateTime& time, bool isSent, QString dispName,
                             const std::function<void(int64_t)>& insertIdCallback)
 {
@@ -500,8 +470,13 @@ QList<History::HistMessage> History::getChatHistory(const ContactId& contactId, 
     return messages;
 }
 
-void History::removeFriendHistory(const ContactId& contactId)
+void History::removeFriendHistory(const ToxPk& friendPk)
 {
+    auto itId = peers.find(friendPk);
+    if (itId == peers.end()) {
+        qCritical() << "attempted to remove friend history of unknown contact, ignoring";
+        return;
+    }
 
     QString queryText = QString(
         // remove select friend's chat
@@ -519,21 +494,26 @@ void History::removeFriendHistory(const ContactId& contactId)
         "DELETE FROM peers WHERE "
         "peers.id NOT IN (SELECT DISTINCT owner FROM aliases UNION SELECT chat_id FROM history); "
         "VACUUM;")
-        .arg(id);
+        .arg(*itId);
     if (db->execNow(queryText)) {
-        peers.remove(contactId);
+        peers.remove(friendPk);
     } else {
         qWarning() << "Failed to remove contact's history";
     }
 }
 
-void History::removeGroupHistory(int64_t id)
+void History::removeGroupHistory(const GroupId& groupToxId)
 {
+    auto id = groups.find(groupToxId);
+    if (id == groups.end()) {
+        qCritical() << "attempted to remove group history of unknown contact, ignoring";
+        return;
+    }
 
     QString queryText = QString(
         // remove select group's history
         "DELETE FROM history WHERE chat_id=%1; "
-        // then if there are contacts who no longer author any messages, we don't need their alias
+        // then if there are aliases that no longer have any messages, we don't need them
         "DELETE FROM aliases WHERE "
         "aliases.id NOT IN (SELECT DISTINCT sender_alias FROM history); "
         // remove select group ID
@@ -541,8 +521,48 @@ void History::removeGroupHistory(int64_t id)
         "VACUUM;")
         .arg(id);
     if (db->execNow(queryText)) {
-        groups.remove(contactId);
+        groups.remove(groupToxId);
     } else {
         qWarning() << "Failed to remove contact's history";
+    }
+}
+
+int64_t History::getPeerId(const ToxPk& peerPk, QVector<RawDatabase::Query>& queries)
+{
+    int64_t peerId;
+    if (peers.contains(peerPk)) {
+        peerId = peers[peerPk];
+    } else {
+        if (peers.isEmpty()) {
+            peerId = 0;
+        } else {
+            peerId = *std::max_element(peers.begin(), peers.end()) + 1;
+        }
+
+        peers[peerPk] = peerId;
+        queries += RawDatabase::Query{("INSERT INTO peers (id, public_key) "
+                                       "VALUES (%1, '"
+                                       + peerPk.toString() + "');")
+                                          .arg(peerId)};
+    }
+}
+
+int64_t History::getGroupId(const GroupId& groupToxId, QVector<RawDatabase::Query>& queries)
+{
+    int64_t groupsTableId;
+    if (groups.contains(groupToxId)) {
+        groupsTableId = groups[groupToxId];
+    } else {
+        if (groups.isEmpty()) {
+            groupsTableId = 0;
+        } else {
+            groupsTableId = *std::max_element(groups.begin(), groups.end()) + 1;
+        }
+
+        groups[groupToxId] = groupsTableId;
+        queries += RawDatabase::Query{("INSERT INTO groups (id, group_id) "
+                                       "VALUES (%1, '"
+                                       + groupToxId.toString() + "');")
+                                          .arg(groupsTableId)};
     }
 }
