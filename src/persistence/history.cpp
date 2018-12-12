@@ -120,6 +120,7 @@ void History::eraseHistory()
                 "DELETE FROM aliases;"
                 "DELETE FROM peers;"
                 "DELETE FROM groups;"
+                "DELETE FROM contacts;"
                 "VACUUM;");
 }
 
@@ -169,6 +170,7 @@ History::generateNewMessageQueries(const ContactId& contactId, const QString& me
                                    QString dispName, std::function<void(int64_t)> insertIdCallback)
 {
     QVector<RawDatabase::Query> queries;
+    int64_t peerId = getPeerId(contactId);
     // Get the db id of the peer we're chatting with
     int64_t peerId;
     if (contacts.contains(contactId)) {
@@ -187,27 +189,7 @@ History::generateNewMessageQueries(const ContactId& contactId, const QString& me
                                           .arg(peerId));
     }
 
-    // Get the db id of the sender of the message
-    int64_t senderId;
-    if (contacts.contains(sender)) {
-        senderId = contacts[sender];
-    } else {
-        if (contacts.isEmpty()) {
-            senderId = 0;
-        } else {
-            senderId = *std::max_element(contacts.begin(), contacts.end()) + 1;
-        }
-
-        contacts[sender] = senderId;
-        queries += RawDatabase::Query{("INSERT INTO contacts (id, public_key) "
-                                       "VALUES (%1, '"
-                                       + sender.toString() + "');")
-                                          .arg(senderId)};
-    }
-
-    queries += RawDatabase::Query(
-        QString("INSERT OR IGNORE INTO aliases (owner, display_name) VALUES (%1, ?);").arg(senderId),
-        {dispName.toUtf8()});
+    int64_t senderId = getPeerId(sender);
 
     // If the alias already existed, the insert will ignore the conflict and last_insert_rowid()
     // will return garbage,
@@ -545,4 +527,32 @@ void History::removeGroupHistory(int64_t id)
     } else {
         qWarning() << "Failed to remove contact's history";
     }
+}
+
+int64_t History::getPeerId(const ContactId& contactId, QVector<RawDatabase::Query>& queries)
+{
+    if (contacts.contains(sender)) {
+        senderId = contacts[sender];
+    } else {
+        if (contacts.isEmpty()) {
+            senderId = 0;
+        } else {
+            senderId = *std::max_element(contacts.begin(), contacts.end()) + 1;
+        }
+
+        contacts[sender] = senderId;
+        queries += RawDatabase::Query{("INSERT INTO contacts (id, public_key) "
+                                       "VALUES (%1, '"
+                                       + sender.toString() + "');")
+                                          .arg(senderId)};
+    }
+
+    queries += RawDatabase::Query(
+        QString("INSERT OR IGNORE INTO aliases (owner, display_name) VALUES (%1, ?);").arg(senderId),
+        {dispName.toUtf8()});
+}
+
+int64_t History::getGroupId(const ContactId& contactId)
+{
+
 }

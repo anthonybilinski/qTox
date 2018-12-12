@@ -96,13 +96,15 @@ public:
 
 protected:
     QVector<RawDatabase::Query>
-    generateNewMessageQueries(const ContactId& contactId, const QString& message,
+    generateNewMessageQueries(const ContactId& chatId, const QString& message,
                               const ContactId& sender, const QDateTime& time, bool isSent,
                               QString dispName, std::function<void(int64_t)> insertIdCallback = {});
 
 private:
     QList<HistMessage> getChatHistory(const ContactId& contactId, const QDateTime& from,
                                       const QDateTime& to, int numMessages);
+    int64_t getPeerId(const ContactId& contactId);
+    int64_t getGroupId(const ContactId& contactId);
     void removeFriendHistory(int64_t id);
     void removeGroupHistory(int64_t id);
     void getContactId
