@@ -258,21 +258,19 @@ QString SmileyPack::smileyfied(const QString& msg)
     QMutexLocker locker(&loadingMutex);
     QString result(msg);
     for ( auto r = emoticonToPath.begin(); r != emoticonToPath.end(); ++r) {
-        QRegularExpression exp;
-        if (r.key().toUcs4().length() == 1) {
+        QString emoticonKey = r.key();
+	bool needsSpace;
+	int keyLength = r.key().toUcs4().length();
+        if (keyLength == 1) {
             // UTF-8 emoji
-            exp.setPattern(r.key());
+	    needsSpace = false;
         }
         else {
             // patterns like ":)" or ":smile:", don't match inside a word or else will hit punctuation and html tags
-            exp.setPattern(QStringLiteral(R"((?<=^|\s))") + QRegularExpression::escape(r.key()) + QStringLiteral(R"((?=$|\s))"));
+	    needsSpace = true;
         }
         int replaceDiff = 0;
-        QRegularExpressionMatchIterator iter = exp.globalMatch(result);
-        while (iter.hasNext()) {
-            QRegularExpressionMatch match = iter.next();
-            int startPos = match.capturedStart();
-            int keyLength = r.key().length();
+        while (int startPos = result.indexOf(emoticonKey) != -1) {
             QString imgRichText = getAsRichText(r.key());
             result.replace(startPos + replaceDiff, keyLength, imgRichText);
             replaceDiff += imgRichText.length() - keyLength;
