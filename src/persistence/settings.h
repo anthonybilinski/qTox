@@ -576,6 +576,7 @@ private:
     Settings& operator=(const Settings&) = delete;
     void savePersonal(QString profileName, const ToxEncrypt* passkey);
     friendProp& getOrInsertFriendPropRef(const ToxPk& id);
+    ICoreSettings::ProxyType fixInvalidProxyType(ICoreSettings::ProxyType proxyType);
 
     QString getSettingsDirPath() const;
 

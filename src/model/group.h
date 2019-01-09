@@ -39,6 +39,7 @@ public:
     int getPeersCount() const;
     void regeneratePeerList();
     const QMap<ToxPk, QString>& getPeerList() const;
+    bool peerHasNickname(ToxPk pk);
 
     void setEventFlag(bool f) override;
     bool getEventFlag() const override;
@@ -47,6 +48,7 @@ public:
     bool getMentionedFlag() const;
 
     void updatePeer(int peerId, QString newName);
+    void updateUsername(ToxPk pk, const QString newName);
     void setName(const QString& newTitle) override;
     void setTitle(const QString& author, const QString& newTitle);
     QString getName() const;
@@ -66,6 +68,7 @@ private:
     QString selfName;
     QString title;
     QMap<ToxPk, QString> toxpks;
+    QMap<ToxPk, bool> empty_nick;
     bool hasNewMessages;
     bool userWasMentioned;
     int groupId;

@@ -9,8 +9,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 option(PLATFORM_EXTENSIONS "Enable platform specific extensions, requires extra dependencies" ON)
 option(USE_FILTERAUDIO "Enable the echo canceling backend" ON)
-# AUTOUPDATE is currently broken and thus disabled
-option(AUTOUPDATE "Enable the auto updater" OFF)
+option(UPDATE_CHECK "Enable automatic update check" ON)
 option(USE_CCACHE "Use ccache when available" ON)
 option(SPELL_CHECK "Enable spell cheching support" ON)
 option(ASAN "Compile with AddressSanitizer" OFF)
@@ -249,6 +248,8 @@ set(${PROJECT_NAME}_SOURCES
   src/chatlog/documentcache.h
   src/chatlog/pixmapcache.cpp
   src/chatlog/pixmapcache.h
+  src/chatlog/toxfileprogress.cpp
+  src/chatlog/toxfileprogress.h
   src/chatlog/textformatter.cpp
   src/chatlog/textformatter.h
   src/core/coreav.cpp
@@ -266,6 +267,7 @@ set(${PROJECT_NAME}_SOURCES
   src/core/toxencrypt.h
   src/core/toxfile.cpp
   src/core/toxfile.h
+  src/core/toxfilepause.h
   src/core/toxid.cpp
   src/core/toxid.h
   src/core/toxlogger.cpp
@@ -368,6 +370,8 @@ set(${PROJECT_NAME}_SOURCES
   src/widget/circlewidget.h
   src/widget/contentdialog.cpp
   src/widget/contentdialog.h
+  src/widget/contentdialogmanager.cpp
+  src/widget/contentdialogmanager.h
   src/widget/contentlayout.cpp
   src/widget/contentlayout.h
   src/widget/emoticonswidget.cpp
@@ -619,12 +623,14 @@ if(${USE_FILTERAUDIO})
     endif()
 endif()
 
-if(${AUTOUPDATE} AND (WIN32 OR APPLE))
-    add_definitions(-DAUTOUPDATE_ENABLED=1)
+if(${UPDATE_CHECK})
+    add_definitions(-DUPDATE_CHECK_ENABLED=1)
     set(${PROJECT_NAME}_SOURCES ${${PROJECT_NAME}_SOURCES}
-        src/net/autoupdate.cpp
-        src/net/autoupdate.h)
-    message(STATUS "using autoupdater")
+        src/net/updatecheck.cpp
+        src/net/updatecheck.h)
+    message(STATUS "using update check")
+else()
+    message(STATUS "NOT using update check")
 endif()
 
 if (MINGW)

@@ -130,8 +130,7 @@ public slots:
     void cancelFileRecv(uint32_t friendId, uint32_t fileNum);
     void rejectFileRecvRequest(uint32_t friendId, uint32_t fileNum);
     void acceptFileRecvRequest(uint32_t friendId, uint32_t fileNum, QString path);
-    void pauseResumeFileSend(uint32_t friendId, uint32_t fileNum);
-    void pauseResumeFileRecv(uint32_t friendId, uint32_t fileNum);
+    void pauseResumeFile(uint32_t friendId, uint32_t fileNum);
 
     void setNospam(uint32_t nospam);
 
@@ -190,7 +189,7 @@ signals:
     void friendRemoved(uint32_t friendId);
     void friendLastSeenChanged(uint32_t friendId, const QDateTime& dateTime);
 
-    void emptyGroupCreated(int groupnumber);
+    void emptyGroupCreated(int groupnumber, const QString& title = QString());
     void groupInviteReceived(const GroupInvite& inviteInfo);
     void groupMessageReceived(int groupnumber, int peernumber, const QString& message, bool isAction);
     void groupNamelistChanged(int groupnumber, int peernumber, uint8_t change);

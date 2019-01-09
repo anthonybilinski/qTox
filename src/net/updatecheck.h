@@ -16,49 +16,34 @@
     You should have received a copy of the GNU General Public License
     along with qTox.  If not, see <http://www.gnu.org/licenses/>.
 */
-
-#ifndef ABOUTFORM_H
-#define ABOUTFORM_H
-
-#include "genericsettings.h"
+#include <QObject>
+#include <QNetworkAccessManager>
+#include <QTimer>
 
 #include <memory>
-class Core;
-class QTimer;
+
+class Settings;
 class QString;
-class UpdateCheck;
-class QLayoutItem;
-
-namespace Ui {
-class AboutSettings;
-}
-
-class AboutForm : public GenericForm
+class QUrl;
+class QNetworkReply;
+class UpdateCheck : public QObject
 {
     Q_OBJECT
+
 public:
-    AboutForm(UpdateCheck* updateCheck);
-    ~AboutForm();
-    virtual QString getFormName() final override
-    {
-        return tr("About");
-    }
+    UpdateCheck(const Settings& settings);
+    void checkForUpdate();
 
-public slots:
-    void onUpdateAvailable(QString latestVersion, QUrl link);
-    void onUpToDate();
-    void onUpdateCheckFailed();
+signals:
+    void updateAvailable(QString latestVersion, QUrl link);
+    void upToDate();
+    void updateCheckFailed();
 
-private:
-    void retranslateUi();
-    void replaceVersions();
-    inline QString createLink(QString path, QString text) const;
+private slots:
+    void handleResponse(QNetworkReply *reply);
 
 private:
-    Ui::AboutSettings* bodyUI;
-    QTimer* progressTimer;
-    UpdateCheck* updateCheck;
-    QMetaObject::Connection linkConnection;
+    QNetworkAccessManager manager;
+    QTimer updateTimer;
+    const Settings& settings;
 };
-
-#endif // ABOUTFORM_H
