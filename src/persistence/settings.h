@@ -25,6 +25,7 @@
 #include "src/core/icoresettings.h"
 #include "src/core/toxencrypt.h"
 #include "src/core/toxfile.h"
+#include "src/core/toxid.h"
 #include "src/persistence/ifriendsettings.h"
 #include "src/video/ivideosettings.h"
 
@@ -502,6 +503,8 @@ public:
 
     bool getFriendBlocked(const ToxPk& id) const override;
     void setFriendBlocked(const ToxPk& id, const bool blocked) override;
+
+    QList<ToxPk> getBlockedFriends() const override;
 
     void saveFriendSettings(const ToxPk& id) override;
     void removeFriendSettings(const ToxPk& id) override;

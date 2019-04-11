@@ -2067,6 +2067,18 @@ void Settings::setFriendBlocked(const ToxPk& id, const bool blocked)
     frnd.blocked = blocked;
 }
 
+QList<ToxPk> Settings::getBlockedFriends() const
+{
+    QMutexLocker locker{&bigLock};
+    QList<ToxPk> blockedFriends;
+    for (auto it = friendLst.begin(); it != friendLst.end(); ++it) {
+        if (it->blocked) {
+            blockedFriends.append(ToxPk{it.key()});
+        }
+    }
+    return blockedFriends;
+}
+
 void Settings::saveFriendSettings(const ToxPk& id)
 {
     Q_UNUSED(id);
