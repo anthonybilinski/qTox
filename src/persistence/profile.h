@@ -85,6 +85,7 @@ signals:
     // TODO(sudden6): this doesn't seem to be the right place for Core errors
     void failedToStart();
     void badProxy();
+    void blockedFriendLoaded(const ToxPk& friendPk);
 
 public slots:
     void onRequestSent(const ToxPk& friendPk, const QString& message);

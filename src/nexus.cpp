@@ -198,6 +198,7 @@ void Nexus::showMainGUI()
     connect(profile, &Profile::failedToStart, widget, &Widget::onFailedToStartCore,
             Qt::BlockingQueuedConnection);
     connect(profile, &Profile::badProxy, widget, &Widget::onBadProxyCore, Qt::BlockingQueuedConnection);
+    connect(profile, &Profile::blockedFriendLoaded, widget, &Widget::addBlockedFriend);
     connect(core, &Core::statusSet, widget, &Widget::onStatusSet);
     connect(core, &Core::usernameSet, widget, &Widget::setUsername);
     connect(core, &Core::statusMessageSet, widget, &Widget::setStatusMessage);

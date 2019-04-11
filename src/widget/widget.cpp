@@ -965,6 +965,11 @@ void Widget::onRejectCall(uint32_t friendId)
     av->cancelCall(friendId);
 }
 
+void Widget::addBlockedFriend(const ToxPk& friendPk)
+{
+    // shit... refactor all sub classes to be able to hold ID-less friends :S
+}
+
 void Widget::addFriend(uint32_t friendId, const ToxPk& friendPk)
 {
     settings.updateFriendAddress(friendPk.toString());

@@ -107,6 +107,10 @@ Profile::Profile(QString name, const QString& password, bool isNewProfile, const
     s.saveGlobal();
     s.loadPersonal(name, passkey.get());
     initCore(toxsave, s, isNewProfile);
+    auto blockedFriends = s.getBlockedFriends();
+    for (auto& blockedFriend : blockedFriends) {
+        emit blockedFriendLoaded(blockedFriend);
+    }
 
     const ToxId& selfId = core->getSelfId();
     loadDatabase(selfId, password);

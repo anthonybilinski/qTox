@@ -156,6 +156,7 @@ public slots:
     void onSelfAvatarLoaded(const QPixmap& pic);
     void setUsername(const QString& username);
     void setStatusMessage(const QString& statusMessage);
+    void addBlockedFriend(const ToxPk& friendPk);
     void addFriend(uint32_t friendId, const ToxPk& friendPk);
     void addFriendFailed(const ToxPk& userId, const QString& errorInfo = QString());
     void onFriendStatusChanged(int friendId, Status::Status status);
