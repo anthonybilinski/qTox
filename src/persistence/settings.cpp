@@ -320,6 +320,7 @@ void Settings::loadPersonal(QString profileName, const ToxEncrypt* passKey)
 
             if (getEnableLogging())
                 fp.activity = ps.value("activity", QDate()).toDate();
+            fp.blocked = ps.value("blocked").toBool();
             friendLst.insert(ToxId(fp.addr).getPublicKey().getByteArray(), fp);
         }
         ps.endArray();
@@ -584,6 +585,7 @@ void Settings::savePersonal(QString profileName, const ToxEncrypt* passkey)
 
             if (getEnableLogging())
                 ps.setValue("activity", frnd.activity);
+            ps.setValue("blocked", frnd.blocked);
 
             ++index;
         }
@@ -2046,6 +2048,23 @@ void Settings::setFriendActivity(const ToxPk& id, const QDate& activity)
     QMutexLocker locker{&bigLock};
     auto& frnd = getOrInsertFriendPropRef(id);
     frnd.activity = activity;
+}
+
+bool Settings::getFriendBlocked(const ToxPk& id) const
+{
+    QMutexLocker locker{&bigLock};
+    auto it = friendLst.find(id.getKey());
+    if (it != friendLst.end())
+        return it->blocked;
+    qWarning() << "getFriendBlocked called for unknown friend";
+    return false;
+}
+
+void Settings::setFriendBlocked(const ToxPk& id, const bool blocked)
+{
+    QMutexLocker locker{&bigLock};
+    auto& frnd = getOrInsertFriendPropRef(id);
+    frnd.blocked = blocked;
 }
 
 void Settings::saveFriendSettings(const ToxPk& id)

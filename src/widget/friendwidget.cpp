@@ -162,6 +162,12 @@ void FriendWidget::onContextMenuCalled(QContextMenuEvent* event)
     const auto setAlias = menu.addAction(tr("Set alias..."));
     connect(setAlias, &QAction::triggered, nameLabel, &CroppingLabel::editBegin);
 
+    auto blockButton =
+        menu.addAction(tr("Blocked", "context menu entry"));
+    blockButton->setCheckable(true);
+    blockButton->setChecked(chatroom->getBlocked());
+    connect(blockButton, &QAction::triggered, chatroom.get(), &FriendChatroom::setBlocked);
+
     menu.addSeparator();
     auto autoAccept =
         menu.addAction(tr("Auto accept files from this friend", "context menu entry"));
@@ -291,6 +297,7 @@ void FriendWidget::changeAutoAccept(bool enable)
         chatroom->disableAutoAccept();
     }
 }
+
 void FriendWidget::showDetails()
 {
     const auto frnd = chatroom->getFriend();

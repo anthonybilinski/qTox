@@ -68,6 +68,10 @@ public slots:
     void disableAutoAccept();
     void setAutoAcceptDir(const QString& dir);
 
+    bool getBlocked() const;
+
+    void setBlocked(const bool blocked);
+
     QVector<GroupToDisplay> getGroups() const;
     QVector<CircleToDisplay> getOtherCircles() const;
 
