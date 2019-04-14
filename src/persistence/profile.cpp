@@ -107,11 +107,6 @@ Profile::Profile(QString name, const QString& password, bool isNewProfile, const
     s.saveGlobal();
     s.loadPersonal(name, passkey.get());
     initCore(toxsave, s, isNewProfile);
-    auto blockedFriends = s.getBlockedFriends();
-    for (auto& blockedFriend : blockedFriends) {
-        emit blockedFriendLoaded(blockedFriend);
-    }
-
     const ToxId& selfId = core->getSelfId();
     loadDatabase(selfId, password);
 }
@@ -319,6 +314,13 @@ void Profile::startCore()
     // reason: Core::getInstance() returns nullptr, because it's not yet initialized
     // solution: kill Core::getInstance
     setAvatar(data);
+
+    // not actually dependent on Core, but dependent on Profile signals all being hooked up.
+    Settings& s = Settings::getInstance();
+    auto blockedFriends = s.getBlockedFriends();
+    for (auto& blockedFriend : blockedFriends) {
+        emit blockedFriendLoaded(blockedFriend);
+    }
 }
 
 /**

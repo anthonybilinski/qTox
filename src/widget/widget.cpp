@@ -967,7 +967,8 @@ void Widget::onRejectCall(uint32_t friendId)
 
 void Widget::addBlockedFriend(const ToxPk& friendPk)
 {
-    // shit... refactor all sub classes to be able to hold ID-less friends :S
+    // avoid using -1 as friendId, more cleanly refactor addFriend to accept either real or blocked friend
+    addFriend(-1, friendPk);
 }
 
 void Widget::addFriend(uint32_t friendId, const ToxPk& friendPk)

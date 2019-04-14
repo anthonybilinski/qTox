@@ -36,6 +36,21 @@ Friend::Friend(uint32_t friendId, const ToxPk& friendPk, const QString& userAlia
     if (userName.isEmpty()) {
         this->userName = friendPk.toString();
     }
+    if (friendId == -1) {
+        friendStatus = Status::Status::Blocked;
+    }
+}
+
+Friend::Friend(const ToxPk& friendPk, const QString& userAlias, const QString& userName)
+    : userName{userName}
+    , userAlias{userAlias}
+    , friendPk{friendPk}
+    , hasNewEvents{false}
+    , friendStatus{Status::Status::Blocked}
+{
+    if (userName.isEmpty()) {
+        this->userName = friendPk.toString();
+    }
 }
 
 /**

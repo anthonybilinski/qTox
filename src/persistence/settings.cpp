@@ -2053,7 +2053,7 @@ void Settings::setFriendActivity(const ToxPk& id, const QDate& activity)
 bool Settings::getFriendBlocked(const ToxPk& id) const
 {
     QMutexLocker locker{&bigLock};
-    auto it = friendLst.find(id.getKey());
+    auto it = friendLst.find(id.getByteArray());
     if (it != friendLst.end())
         return it->blocked;
     qWarning() << "getFriendBlocked called for unknown friend";
