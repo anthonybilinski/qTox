@@ -171,6 +171,7 @@ void FriendWidget::onContextMenuCalled(QContextMenuEvent* event)
         menu.addAction(tr("Blocked", "context menu entry"));
     blockButton->setCheckable(true);
     blockButton->setChecked(chatroom->getBlocked());
+    connect(blockButton, &QAction::triggered, this, &FriendWidget::setBlocked);
     connect(blockButton, &QAction::triggered, chatroom.get(), &FriendChatroom::setBlocked);
 
     menu.addSeparator();
@@ -185,7 +186,7 @@ void FriendWidget::onContextMenuCalled(QContextMenuEvent* event)
     if (!contentDialog || !contentDialog->hasContactWidget(friendPk)) {
         const auto removeAction =
             menu.addAction(tr("Remove friend", "Menu to remove the friend from our friendlist"));
-        connect(removeAction, &QAction::triggered, this, [=]() { emit removeFriend(friendPk); },
+        connect(removeAction, &QAction::triggered, this, [=]() { emit removeFriend(friendPk, false); },
                 Qt::QueuedConnection);
     }
 
@@ -289,6 +290,21 @@ void FriendWidget::moveToCircle(int newCircleId)
         oldCircleWidget->updateStatus();
         Widget::getInstance()->searchCircle(oldCircleWidget);
     }
+}
+
+void FriendWidget::setBlocked(const bool enable)
+{
+    const auto frnd = chatroom->getFriend();
+    const auto pk = frnd->getPublicKey();
+    auto core = Core::getInstance();
+    const auto friendId = frnd->getId();
+    if (enable) {
+        core->removeFriend(friendId);
+    } else {
+        emit removeFriend(chatroom->getFriend()->getPublicKey(), true);
+        core->acceptFriendRequest(pk);
+    }
+    Settings::getInstance().setFriendBlocked(pk, enable);
 }
 
 void FriendWidget::changeAutoAccept(bool enable)

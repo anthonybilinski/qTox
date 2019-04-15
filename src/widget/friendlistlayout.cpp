@@ -18,6 +18,7 @@
 #include "src/model/friend.h"
 #include "src/model/status.h"
 #include "src/friendlist.h"
+#include <QDebug>
 #include <cassert>
 
 FriendListLayout::FriendListLayout()
@@ -68,11 +69,7 @@ void FriendListLayout::addFriendWidget(FriendWidget* w, Status::Status s)
 
 void FriendListLayout::removeFriendWidget(FriendWidget* widget, Status::Status s)
 {
-<<<<<<< HEAD
-    if (s == Status::Status::Offline)
-=======
-    if (s == Status::Offline) {
->>>>>>> 2d9857ae... more working
+    if (s == Status::Status::Offline) {
         friendOfflineLayout.removeSortedWidget(widget);
     } else if (s == Status::Blocked) {
         friendBlockedLayout.removeSortedWidget(widget);

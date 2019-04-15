@@ -112,6 +112,7 @@ FriendListWidget::FriendListWidget(Widget* parent, bool groupsOnTop)
     // Prevent QLayout's add child warning before setting the mode.
     listLayout->removeItem(listLayout->getLayoutOnline());
     listLayout->removeItem(listLayout->getLayoutOffline());
+    listLayout->removeItem(listLayout->getLayoutBlocked());
 
     setMode(Name);
 
@@ -181,6 +182,7 @@ void FriendListWidget::setMode(Mode mode)
         listLayout->addLayout(listLayout->getLayoutOffline());
         listLayout->addLayout(circleLayout->getLayout());
         onGroupchatPositionChanged(groupsOnTop);
+        listLayout->addLayout(listLayout->getLayoutBlocked());
 
         if (activityLayout != nullptr) {
             QLayoutItem* item;
@@ -222,6 +224,7 @@ void FriendListWidget::setMode(Mode mode)
             activityLayout->addWidget(category);
         }
 
+        moveFriends(listLayout->getLayoutBlocked());
         moveFriends(listLayout->getLayoutOffline());
         moveFriends(listLayout->getLayoutOnline());
         moveFriends(circleLayout->getLayout());
@@ -234,6 +237,7 @@ void FriendListWidget::setMode(Mode mode)
 
         listLayout->removeItem(listLayout->getLayoutOnline());
         listLayout->removeItem(listLayout->getLayoutOffline());
+        listLayout->removeItem(listLayout->getLayoutBlocked());
 
         if (circleLayout != nullptr) {
             listLayout->removeItem(circleLayout->getLayout());
@@ -506,12 +510,8 @@ void FriendListWidget::cycleContacts(GenericChatroomWidget* activeChatroomWidget
             currentLayout = circleLayout->getLayout();
         } else {
             const auto status = friendWidget->getFriend()->getStatus();
-            currentLayout = listLayout->getLayoutOnline();
+            currentLayout = listLayout->getFriendLayout(status);
             index = listLayout->indexOfFriendWidget(friendWidget, status);
-            if (index == -1) {
-                currentLayout = listLayout->getLayoutOffline();
-                index = listLayout->indexOfFriendWidget(friendWidget, status);
-            }
         }
     } else {
         GroupWidget* groupWidget = qobject_cast<GroupWidget*>(activeChatroomWidget);
@@ -540,6 +540,7 @@ void FriendListWidget::cycleContacts(GenericChatroomWidget* activeChatroomWidget
         // Go to the actual next index.
         if (currentLayout == listLayout->getLayoutOnline()
             || currentLayout == listLayout->getLayoutOffline()
+            || currentLayout == listLayout->getLayoutBlocked()
             || currentLayout == groupLayout.getLayout()) {
             GenericChatroomWidget* chatWidget =
                 qobject_cast<GenericChatroomWidget*>(currentLayout->itemAt(index)->widget());

@@ -208,7 +208,7 @@ private slots:
     void openNewDialog(GenericChatroomWidget* widget);
     void onChatroomWidgetClicked(GenericChatroomWidget* widget);
     void onStatusMessageChanged(const QString& newStatusMessage);
-    void removeFriend(const ToxPk& friendId);
+    void removeFriendById(const ToxPk& friendId, bool fake);
     void copyFriendIdToClipboard(const ToxPk& friendId);
     void removeGroup(const GroupId& groupId);
     void setStatusOnline();

@@ -1019,7 +1019,7 @@ void Widget::addFriend(uint32_t friendId, const ToxPk& friendPk, bool blocked)
     connect(widget, &FriendWidget::friendHistoryRemoved, friendForm, &ChatForm::clearChatArea);
     connect(widget, &FriendWidget::copyFriendIdToClipboard, this, &Widget::copyFriendIdToClipboard);
     connect(widget, &FriendWidget::contextMenuCalled, widget, &FriendWidget::onContextMenuCalled);
-    connect(widget, SIGNAL(removeFriend(const ToxPk&)), this, SLOT(removeFriend(const ToxPk&)));
+    connect(widget, &FriendWidget::removeFriend, this, &Widget::removeFriendById);
 
     Profile* profile = Nexus::getProfile();
     connect(profile, &Profile::friendAvatarSet, widget, &FriendWidget::onAvatarSet);
@@ -1268,12 +1268,7 @@ void Widget::addFriendDialog(const Friend* frnd, ContentDialog* dialog)
 
     friendWidget->setStatusMsg(widget->getStatusMsg());
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 7, 0))
-    auto widgetRemoveFriend = QOverload<const ToxPk&>::of(&Widget::removeFriend);
-#else
-    auto widgetRemoveFriend = static_cast<void (Widget::*)(const ToxPk&)>(&Widget::removeFriend);
-#endif
-    connect(friendWidget, &FriendWidget::removeFriend, this, widgetRemoveFriend);
+    connect(friendWidget, &FriendWidget::removeFriend, this, &Widget::removeFriendById);
     connect(friendWidget, &FriendWidget::middleMouseClicked, dialog,
             [=]() { dialog->removeFriend(friendPk); });
     connect(friendWidget, &FriendWidget::copyFriendIdToClipboard, this,
@@ -1574,9 +1569,9 @@ void Widget::removeFriend(Friend* f, bool fake)
     contactListWidget->reDraw();
 }
 
-void Widget::removeFriend(const ToxPk& friendId)
+void Widget::removeFriendById(const ToxPk& friendId, bool fake)
 {
-    removeFriend(FriendList::findFriend(friendId), false);
+    removeFriend(FriendList::findFriend(friendId), fake);
 }
 
 void Widget::onDialogShown(GenericChatroomWidget* widget)

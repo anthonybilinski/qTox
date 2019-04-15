@@ -46,7 +46,7 @@ public:
 
 signals:
     void friendWidgetClicked(FriendWidget* widget);
-    void removeFriend(const ToxPk& friendPk);
+    void removeFriend(const ToxPk& friendPk, bool fake);
     void copyFriendIdToClipboard(const ToxPk& friendPk);
     void contextMenuCalled(QContextMenuEvent* event);
     void friendHistoryRemoved();
@@ -68,6 +68,7 @@ private slots:
     void moveToNewCircle();
     void removeFromCircle();
     void moveToCircle(int circleId);
+    void setBlocked(const bool enable);
     void changeAutoAccept(bool enable);
     void showDetails();
 

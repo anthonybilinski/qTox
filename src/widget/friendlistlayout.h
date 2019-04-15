@@ -44,10 +44,10 @@ public:
     QLayout* getLayoutOnline() const;
     QLayout* getLayoutOffline() const;
     QLayout* getLayoutBlocked() const;
+    QLayout* getFriendLayout(Status s) const;
 
 private:
     void init();
-    QLayout* getFriendLayout(Status::Status s) const;
 
     GenericChatItemLayout friendOnlineLayout;
     GenericChatItemLayout friendOfflineLayout;

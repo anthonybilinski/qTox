@@ -98,15 +98,7 @@ bool FriendChatroom::getBlocked() const
 
 void FriendChatroom::setBlocked(const bool blocked)
 {
-    const auto pk = frnd->getPublicKey();
-    auto core = Core::getInstance();
-    const auto friendId = frnd->getId();
-    if (blocked) {
-        core->removeFriend(friendId);
-    } else {
-        core->acceptFriendRequest(pk);
-    }
-    Settings::getInstance().setFriendBlocked(pk, blocked);
+
 }
 
 void FriendChatroom::inviteFriend(const Group* group)
