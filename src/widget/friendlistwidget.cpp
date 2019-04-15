@@ -493,7 +493,6 @@ void FriendListWidget::cycleContacts(GenericChatroomWidget* activeChatroomWidget
 
     QLayout* currentLayout = nullptr;
     CircleWidget* circleWidget = nullptr;
-
     if (friendWidget != nullptr) {
         const ToxPk& pk = friendWidget->getFriend()->getPublicKey();
         uint32_t circleId = Settings::getInstance().getFriendCircleID(pk);
@@ -506,11 +505,12 @@ void FriendListWidget::cycleContacts(GenericChatroomWidget* activeChatroomWidget
             index = circleLayout->indexOfSortedWidget(circleWidget);
             currentLayout = circleLayout->getLayout();
         } else {
+            const auto status = friendWidget->getFriend()->getStatus();
             currentLayout = listLayout->getLayoutOnline();
-            index = listLayout->indexOfFriendWidget(friendWidget, true);
+            index = listLayout->indexOfFriendWidget(friendWidget, status);
             if (index == -1) {
                 currentLayout = listLayout->getLayoutOffline();
-                index = listLayout->indexOfFriendWidget(friendWidget, false);
+                index = listLayout->indexOfFriendWidget(friendWidget, status);
             }
         }
     } else {

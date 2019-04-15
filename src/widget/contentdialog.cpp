@@ -152,7 +152,7 @@ FriendWidget* ContentDialog::addFriend(std::shared_ptr<FriendChatroom> chatroom,
     const auto compact = Settings::getInstance().getCompactLayout();
     auto frnd = chatroom->getFriend();
     auto friendPk = frnd->getPublicKey();
-    auto friendWidget = new FriendWidget(chatroom, compact);
+    auto friendWidget = new FriendWidget(chatroom, compact, frnd->getStatus() == Status::Blocked);
     contactWidgets[friendPk] = friendWidget;
     friendLayout->addFriendWidget(friendWidget, frnd->getStatus());
     contactChatForms[friendPk] = form;
@@ -269,26 +269,24 @@ void ContentDialog::ensureSplitterVisible()
  */
 int ContentDialog::getCurrentLayout(QLayout*& layout)
 {
-    layout = friendLayout->getLayoutOnline();
-    int index = friendLayout->indexOfFriendWidget(activeChatroomWidget, true);
-    if (index != -1) {
-        return index;
+    const Friend* frd = activeChatroomWidget->getFriend();
+    int index = -1;
+    if (frd != nullptr) {
+        const auto status = frd->getStatus();
+        if (status == Status::Offline) {
+            layout = friendLayout->getLayoutOffline();
+        } else if (status == Status::Blocked) {
+            layout = friendLayout->getLayoutBlocked();
+        } else {
+            layout = friendLayout->getLayoutOnline();
+        }
+        index = friendLayout->indexOfFriendWidget(activeChatroomWidget, status);
+    } else {
+        layout = groupLayout.getLayout();
+        index = groupLayout.indexOfSortedWidget(activeChatroomWidget);
     }
-
-    layout = friendLayout->getLayoutOffline();
-    index = friendLayout->indexOfFriendWidget(activeChatroomWidget, false);
-    if (index != -1) {
-        return index;
-    }
-
-    layout = groupLayout.getLayout();
-    index = groupLayout.indexOfSortedWidget(activeChatroomWidget);
-    if (index != -1) {
-        return index;
-    }
-
-    layout = nullptr;
-    return -1;
+    assert(index != -1);
+    return index;
 }
 
 /**

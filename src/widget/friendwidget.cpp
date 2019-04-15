@@ -57,13 +57,18 @@
  * For example, used on friend list.
  * When you click should open the chat with friend. Widget has a context menu.
  */
-FriendWidget::FriendWidget(std::shared_ptr<FriendChatroom> chatroom, bool compact)
+FriendWidget::FriendWidget(std::shared_ptr<FriendChatroom> chatroom, bool compact, bool blocked)
     : GenericChatroomWidget(compact)
     , chatroom{chatroom}
     , isDefaultAvatar{true}
 {
     avatar->setPixmap(QPixmap(":/img/contact.svg"));
-    statusPic.setPixmap(QPixmap(Status::getIconPath(Status::Status::Offline)));
+    qDebug() << "Creating friendWidget for blocked friend?" << blocked;
+    if (blocked) {
+        statusPic.setPixmap(QPixmap(Widget::getStatusIconPath(Status::Status::Blocked)));
+    } else {
+        statusPic.setPixmap(QPixmap(Widget::getStatusIconPath(Status::Status::Offline)));
+    }
     statusPic.setMargin(3);
 
     auto frnd = chatroom->getFriend();

@@ -43,36 +43,53 @@ void FriendListLayout::init()
     friendOfflineLayout.getLayout()->setSpacing(0);
     friendOfflineLayout.getLayout()->setMargin(0);
 
+    friendBlockedLayout.getLayout()->setSpacing(0);
+    friendBlockedLayout.getLayout()->setMargin(0);
+
     addLayout(friendOnlineLayout.getLayout());
     addLayout(friendOfflineLayout.getLayout());
+    addLayout(friendBlockedLayout.getLayout());
 }
 
 void FriendListLayout::addFriendWidget(FriendWidget* w, Status::Status s)
 {
     friendOfflineLayout.removeSortedWidget(w);
     friendOnlineLayout.removeSortedWidget(w);
+    friendBlockedLayout.removeSortedWidget(w);
 
     if (s == Status::Status::Offline) {
         friendOfflineLayout.addSortedWidget(w);
-        return;
+    } else if (s == Status::Blocked) {
+        friendBlockedLayout.addSortedWidget(w);
+    } else {
+        friendOnlineLayout.addSortedWidget(w);
     }
-
-    friendOnlineLayout.addSortedWidget(w);
 }
 
 void FriendListLayout::removeFriendWidget(FriendWidget* widget, Status::Status s)
 {
+<<<<<<< HEAD
     if (s == Status::Status::Offline)
+=======
+    if (s == Status::Offline) {
+>>>>>>> 2d9857ae... more working
         friendOfflineLayout.removeSortedWidget(widget);
-    else
+    } else if (s == Status::Blocked) {
+        friendBlockedLayout.removeSortedWidget(widget);
+    } else {
         friendOnlineLayout.removeSortedWidget(widget);
+    }
 }
 
-int FriendListLayout::indexOfFriendWidget(GenericChatItemWidget* widget, bool online) const
+int FriendListLayout::indexOfFriendWidget(GenericChatItemWidget* widget, Status s) const
 {
-    if (online)
+    if (s == Status::Offline) {
+        return friendOfflineLayout.indexOfSortedWidget(widget);
+    } else if (s == Status::Blocked) {
+        return friendBlockedLayout.indexOfSortedWidget(widget);
+    } else {
         return friendOnlineLayout.indexOfSortedWidget(widget);
-    return friendOfflineLayout.indexOfSortedWidget(widget);
+    }
 }
 
 void FriendListLayout::moveFriendWidgets(FriendListWidget* listWidget)
@@ -91,6 +108,13 @@ void FriendListLayout::moveFriendWidgets(FriendListWidget* listWidget)
         const Friend* f = friendWidget->getFriend();
         listWidget->moveWidget(friendWidget, f->getStatus(), true);
     }
+    while (!friendBlockedLayout.getLayout()->isEmpty()) {
+        QWidget* getWidget = friendBlockedLayout.getLayout()->takeAt(0)->widget();
+
+        FriendWidget* friendWidget = qobject_cast<FriendWidget*>(getWidget);
+        const Friend* f = friendWidget->getFriend();
+        listWidget->moveWidget(friendWidget, f->getStatus(), true);
+    }
 }
 
 int FriendListLayout::friendOnlineCount() const
@@ -100,18 +124,23 @@ int FriendListLayout::friendOnlineCount() const
 
 int FriendListLayout::friendTotalCount() const
 {
-    return friendOfflineLayout.getLayout()->count() + friendOnlineCount();
+    return friendBlockedLayout.getLayout()->count()
+        + friendOfflineLayout.getLayout()->count()
+        + friendOnlineCount();
 }
 
 bool FriendListLayout::hasChatrooms() const
 {
-    return !(friendOfflineLayout.getLayout()->isEmpty() && friendOnlineLayout.getLayout()->isEmpty());
+    return !(friendOfflineLayout.getLayout()->isEmpty()
+        && friendOnlineLayout.getLayout()->isEmpty()
+        && friendBlockedLayout.getLayout()->isEmpty());
 }
 
 void FriendListLayout::searchChatrooms(const QString& searchString, bool hideOnline, bool hideOffline)
 {
     friendOnlineLayout.search(searchString, hideOnline);
     friendOfflineLayout.search(searchString, hideOffline);
+    friendBlockedLayout.search(searchString, hideOffline);
 }
 
 QLayout* FriendListLayout::getLayoutOnline() const
@@ -124,7 +153,18 @@ QLayout* FriendListLayout::getLayoutOffline() const
     return friendOfflineLayout.getLayout();
 }
 
-QLayout* FriendListLayout::getFriendLayout(Status::Status s) const
+QLayout* FriendListLayout::getLayoutBlocked() const
 {
-    return s == Status::Status::Offline ? friendOfflineLayout.getLayout() : friendOnlineLayout.getLayout();
+    return friendBlockedLayout.getLayout();
+}
+
+QLayout* FriendListLayout::getFriendLayout(Status s) const
+{
+    if (s == Status::Status::Offline) {
+        return friendOfflineLayout.getLayout();
+    } else if (s == Status::Status::Blocked) {
+        return friendBlockedLayout.getLayout();
+    } else {
+        return friendOnlineLayout.getLayout();
+    }
 }

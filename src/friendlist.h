@@ -34,7 +34,7 @@ class ToxPk;
 class FriendList
 {
 public:
-    static Friend* addFriend(uint32_t friendId, const ToxPk& friendPk);
+    static Friend* addFriend(uint32_t friendId, const ToxPk& friendPk, bool blocked);
     static Friend* findFriend(const ToxPk& friendPk);
     static const ToxPk& id2Key(uint32_t friendId);
     static QList<Friend*> getAllFriends();

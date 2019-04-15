@@ -32,7 +32,7 @@ public:
 
     void addFriendWidget(FriendWidget* widget, Status::Status s);
     void removeFriendWidget(FriendWidget* widget, Status::Status s);
-    int indexOfFriendWidget(GenericChatItemWidget* widget, bool online) const;
+    int indexOfFriendWidget(GenericChatItemWidget* widget, Status::Status s) const;
     void moveFriendWidgets(FriendListWidget* listWidget);
     int friendOnlineCount() const;
     int friendTotalCount() const;
@@ -43,6 +43,7 @@ public:
 
     QLayout* getLayoutOnline() const;
     QLayout* getLayoutOffline() const;
+    QLayout* getLayoutBlocked() const;
 
 private:
     void init();
@@ -50,6 +51,7 @@ private:
 
     GenericChatItemLayout friendOnlineLayout;
     GenericChatItemLayout friendOfflineLayout;
+    GenericChatItemLayout friendBlockedLayout;
 };
 
 #endif // FRIENDLISTLAYOUT_H

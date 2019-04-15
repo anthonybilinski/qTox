@@ -62,6 +62,7 @@ protected:
     void setContainerAttribute(Qt::WidgetAttribute attribute, bool enabled);
     QLayout* friendOnlineLayout() const;
     QLayout* friendOfflineLayout() const;
+    QLayout* friendBlockedLayout() const;
     void emitChatroomWidget(QLayout* layout, int index);
 
 private:

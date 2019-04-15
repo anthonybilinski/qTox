@@ -105,6 +105,7 @@ private:
         All = 0,
         Online,
         Offline,
+        Blocked,
         Friends,
         Groups
     };
@@ -157,7 +158,8 @@ public slots:
     void setUsername(const QString& username);
     void setStatusMessage(const QString& statusMessage);
     void addBlockedFriend(const ToxPk& friendPk);
-    void addFriend(uint32_t friendId, const ToxPk& friendPk);
+    void addFriend(uint32_t friendId, const ToxPk& friendPk, bool blocked = false);
+    void addCoreFriend(uint32_t friendId, const ToxPk& friendPk);
     void addFriendFailed(const ToxPk& userId, const QString& errorInfo = QString());
     void onFriendStatusChanged(int friendId, Status::Status status);
     void onFriendStatusMessageChanged(int friendId, const QString& message);
@@ -254,9 +256,13 @@ private:
     static bool filterGroups(FilterCriteria index);
     static bool filterOnline(FilterCriteria index);
     static bool filterOffline(FilterCriteria index);
+    static bool filterBlocked(FilterCriteria index);
     void retranslateUi();
     void focusChatInput();
     void openDialog(GenericChatroomWidget* widget, bool newWindow);
+    void setFriendName(const ToxPk& friendId, const QString& username);
+    void loadFriendName(const ToxPk& friendId);
+    void setFriendStatusMessage(const ToxPk& friendId, const QString& message);
 
 private:
     SystemTrayIcon* icon = nullptr;

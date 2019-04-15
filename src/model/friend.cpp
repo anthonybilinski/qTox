@@ -25,28 +25,13 @@
 #include "src/persistence/profile.h"
 #include "src/widget/form/chatform.h"
 
-Friend::Friend(uint32_t friendId, const ToxPk& friendPk, const QString& userAlias, const QString& userName)
+Friend::Friend(uint32_t friendId, const ToxPk& friendPk, const QString& userAlias, const QString& userName, bool blocked)
     : userName{userName}
     , userAlias{userAlias}
     , friendPk{friendPk}
     , friendId{friendId}
     , hasNewEvents{false}
-    , friendStatus{Status::Status::Offline}
-{
-    if (userName.isEmpty()) {
-        this->userName = friendPk.toString();
-    }
-    if (friendId == -1) {
-        friendStatus = Status::Status::Blocked;
-    }
-}
-
-Friend::Friend(const ToxPk& friendPk, const QString& userAlias, const QString& userName)
-    : userName{userName}
-    , userAlias{userAlias}
-    , friendPk{friendPk}
-    , hasNewEvents{false}
-    , friendStatus{Status::Status::Blocked}
+    , friendStatus{blocked ? Status::Status::Blocked : Status::Status::Offline}
 {
     if (userName.isEmpty()) {
         this->userName = friendPk.toString();

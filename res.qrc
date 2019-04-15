@@ -33,6 +33,7 @@
         <file>img/status/offline_notification.svg</file>
         <file>img/status/online.svg</file>
         <file>img/status/online_notification.svg</file>
+        <file>img/status/blocked.svg</file>
         <file>img/taskbar/dark/taskbar_online.svg</file>
         <file>img/taskbar/dark/taskbar_away.svg</file>
         <file>img/taskbar/dark/taskbar_busy.svg</file>

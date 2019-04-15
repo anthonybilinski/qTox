@@ -22,6 +22,7 @@
 #include "friendlistwidget.h"
 #include "friendwidget.h"
 #include "src/model/status.h"
+#include "src/model/friend.h"
 #include "src/widget/style.h"
 #include "tool/croppinglabel.h"
 #include <QBoxLayout>
@@ -144,8 +145,8 @@ void CategoryWidget::removeFriendWidget(FriendWidget* w, Status::Status s)
 void CategoryWidget::updateStatus()
 {
     QString online = QString::number(listLayout->friendOnlineCount());
-    QString offline = QString::number(listLayout->friendTotalCount());
-    QString text = online + QStringLiteral(" / ") + offline;
+    QString total = QString::number(listLayout->friendTotalCount());
+    QString text = online + QStringLiteral(" / ") + total;
     statusLabel->setText(text);
 }
 
@@ -204,12 +205,15 @@ bool CategoryWidget::cycleContacts(FriendWidget* activeChatroomWidget, bool forw
     if (friendWidget == nullptr)
         return false;
 
-    currentLayout = listLayout->getLayoutOnline();
-    index = listLayout->indexOfFriendWidget(friendWidget, true);
-    if (index == -1) {
+    const auto status = friendWidget->getFriend()->getStatus();
+    if (status == Status::Status::Offline) {
         currentLayout = listLayout->getLayoutOffline();
-        index = listLayout->indexOfFriendWidget(friendWidget, false);
+    } else if (status == Status::Status::Blocked) {
+        currentLayout = listLayout->getLayoutBlocked();
+    } else {
+        currentLayout = listLayout->getLayoutOnline();
     }
+    index = listLayout->indexOfFriendWidget(friendWidget, status);
 
     index += forward ? 1 : -1;
     for (;;) {
@@ -294,6 +298,11 @@ QLayout* CategoryWidget::friendOfflineLayout() const
 QLayout* CategoryWidget::friendOnlineLayout() const
 {
     return listLayout->getLayoutOnline();
+}
+
+QLayout* CategoryWidget::friendBlockedLayout() const
+{
+    return listLayout->getLayoutBlocked();
 }
 
 void CategoryWidget::moveFriendWidgets(FriendListWidget* friendList)

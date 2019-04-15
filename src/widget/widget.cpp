@@ -968,17 +968,23 @@ void Widget::onRejectCall(uint32_t friendId)
 void Widget::addBlockedFriend(const ToxPk& friendPk)
 {
     // avoid using -1 as friendId, more cleanly refactor addFriend to accept either real or blocked friend
-    addFriend(-1, friendPk);
+    addFriend(-1, friendPk, true);
+    loadFriendName(friendPk);
 }
 
-void Widget::addFriend(uint32_t friendId, const ToxPk& friendPk)
+void Widget::addCoreFriend(uint32_t friendId, const ToxPk& friendPk)
+{
+    addFriend(friendId, friendPk, false);
+}
+
+void Widget::addFriend(uint32_t friendId, const ToxPk& friendPk, bool blocked)
 {
     settings.updateFriendAddress(friendPk.toString());
 
-    Friend* newfriend = FriendList::addFriend(friendId, friendPk);
+    Friend* newfriend = FriendList::addFriend(friendId, friendPk, blocked);
     std::shared_ptr<FriendChatroom> chatroom(new FriendChatroom(newfriend));
     const auto compact = settings.getCompactLayout();
-    auto widget = new FriendWidget(chatroom, compact);
+    auto widget = new FriendWidget(chatroom, compact, blocked);
     auto history = Nexus::getProfile()->getHistory();
     auto friendForm = new ChatForm(newfriend, history);
 
@@ -1066,10 +1072,9 @@ void Widget::onFriendStatusChanged(int friendId, Status::Status status)
     ContentDialogManager::getInstance()->updateFriendStatus(friendPk);
 }
 
-void Widget::onFriendStatusMessageChanged(int friendId, const QString& message)
+void Widget::setFriendStatusMessage(const ToxPk& friendId, const QString& message)
 {
-    const auto& friendPk = FriendList::id2Key(friendId);
-    Friend* f = FriendList::findFriend(friendPk);
+    Friend* f = FriendList::findFriend(friendId);
     if (!f) {
         return;
     }
@@ -1077,9 +1082,16 @@ void Widget::onFriendStatusMessageChanged(int friendId, const QString& message)
     QString str = message;
     str.replace('\n', ' ').remove('\r').remove(QChar('\0'));
     f->setStatusMessage(str);
+    settings.setFriendStatusMessage(friendId, str);
+    friendWidgets[friendId]->setStatusMsg(str);
+    chatForms[friendId]->setStatusMessage(str);
 
-    friendWidgets[friendPk]->setStatusMsg(str);
-    chatForms[friendPk]->setStatusMessage(str);
+}
+
+void Widget::onFriendStatusMessageChanged(int friendId, const QString& message)
+{
+    const auto& friendPk = FriendList::id2Key(friendId);
+    setFriendStatusMessage(friendPk, message);
 }
 
 void Widget::onFriendDisplayedNameChanged(const QString& displayed)
@@ -1092,10 +1104,9 @@ void Widget::onFriendDisplayedNameChanged(const QString& displayed)
     }
 }
 
-void Widget::onFriendUsernameChanged(int friendId, const QString& username)
+void Widget::setFriendName(const ToxPk& friendId, const QString& username)
 {
-    const auto& friendPk = FriendList::id2Key(friendId);
-    Friend* f = FriendList::findFriend(friendPk);
+    Friend* f = FriendList::findFriend(friendId);
     if (!f) {
         return;
     }
@@ -1103,6 +1114,22 @@ void Widget::onFriendUsernameChanged(int friendId, const QString& username)
     QString str = username;
     str.replace('\n', ' ').remove('\r').remove(QChar('\0'));
     f->setName(str);
+}
+
+void Widget::loadFriendName(const ToxPk& friendId)
+{
+    const auto name = settings.getFriendName(friendId);
+    setFriendName(friendId, name);
+    const auto statusMessage = settings.getFriendStatusMessage(friendId);
+    setFriendStatusMessage(friendId, statusMessage);
+}
+
+void Widget::onFriendUsernameChanged(int friendId, const QString& username)
+{
+    const auto& friendPk = FriendList::id2Key(friendId);
+    settings.setFriendName(friendPk, username);
+    settings.savePersonal();
+    setFriendName(friendPk, username);
 }
 
 void Widget::onFriendAliasChanged(const ToxPk& friendId, const QString& alias)
@@ -2152,6 +2179,17 @@ bool Widget::filterOnline(FilterCriteria index)
     }
 }
 
+bool Widget::filterBlocked(FilterCriteria index)
+{
+    switch (index) {
+    case FilterCriteria::Blocked:
+    case FilterCriteria::Groups:
+        return true;
+    default:
+        return false;
+    }
+}
+
 void Widget::clearAllReceipts()
 {
     QList<Friend*> frnds = FriendList::getAllFriends();
@@ -2277,6 +2315,8 @@ Widget::FilterCriteria Widget::getFilterCriteria() const
         return FilterCriteria::Online;
     else if (checked == filterOfflineAction)
         return FilterCriteria::Offline;
+    else if (checked == filterBlockedAction)
+        return FilterCriteria::Blocked;
     else if (checked == filterFriendsAction)
         return FilterCriteria::Friends;
     else if (checked == filterGroupsAction)
