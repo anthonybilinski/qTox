@@ -280,6 +280,7 @@ private:
     QAction* filterAllAction;
     QAction* filterOnlineAction;
     QAction* filterOfflineAction;
+    QAction* filterBlockedAction;
     QAction* filterFriendsAction;
     QAction* filterGroupsAction;
 

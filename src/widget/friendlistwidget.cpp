@@ -363,10 +363,10 @@ void FriendListWidget::removeCircleWidget(CircleWidget* widget)
 }
 
 void FriendListWidget::searchChatrooms(const QString& searchString, bool hideOnline,
-                                       bool hideOffline, bool hideGroups)
+                                       bool hideOffline, bool hideBlocked, bool hideGroups)
 {
     groupLayout.search(searchString, hideGroups);
-    listLayout->searchChatrooms(searchString, hideOnline, hideOffline);
+    listLayout->searchChatrooms(searchString, hideOnline, hideOffline, hideBlocked);
 
     if (circleLayout != nullptr) {
         for (int i = 0; i != circleLayout->getLayout()->count(); ++i) {
@@ -680,45 +680,34 @@ CircleWidget* FriendListWidget::createCircleWidget(int id)
 
 QLayout* FriendListWidget::nextLayout(QLayout* layout, bool forward) const
 {
-    if (layout == groupLayout.getLayout()) {
-        if (forward) {
-            if (groupsOnTop)
-                return listLayout->getLayoutOnline();
-
-            return listLayout->getLayoutOffline();
-        } else {
-            if (groupsOnTop)
-                return circleLayout->getLayout();
-
-            return listLayout->getLayoutOnline();
-        }
-    } else if (layout == listLayout->getLayoutOnline()) {
-        if (forward) {
-            if (groupsOnTop)
-                return listLayout->getLayoutOffline();
-
-            return groupLayout.getLayout();
-        } else {
-            if (groupsOnTop)
-                return groupLayout.getLayout();
-
-            return circleLayout->getLayout();
-        }
-    } else if (layout == listLayout->getLayoutOffline()) {
-        if (forward)
-            return circleLayout->getLayout();
-        else if (groupsOnTop)
-            return listLayout->getLayoutOnline();
-
-        return groupLayout.getLayout();
-    } else if (layout == circleLayout->getLayout()) {
-        if (forward) {
-            if (groupsOnTop)
-                return groupLayout.getLayout();
-
-            return listLayout->getLayoutOnline();
-        } else
-            return listLayout->getLayoutOffline();
+    auto* group = groupLayout.getLayout();
+    auto* online = listLayout->getLayoutOnline();
+    auto* offline = listLayout->getLayoutOffline();
+    auto* blocked = listLayout->getLayoutBlocked();
+    auto* circle = circleLayout->getLayout();
+    std::vector<QLayout*> layoutOrder;
+    if (groupsOnTop) {
+        layoutOrder = {online, group, offline, circle, blocked};
+    } else {
+        layoutOrder = {group, online, offline, circle, blocked};
     }
-    return nullptr;
+    int index;
+    for (index = 0; index < layoutOrder.size(); ++index) {
+        if (layoutOrder[index] == layout)
+            break;
+    }
+    if (forward) {
+        if (index + 1 == layoutOrder.size()) {
+            layout = layoutOrder[0];
+        } else {
+            layout = layoutOrder[index+1];
+        }
+    } else {
+        if (index == 0) {
+            layout = layoutOrder[layoutOrder.size()-1];
+        } else {
+            layout = layoutOrder[index-1];
+        }
+    }
+    return layout;
 }

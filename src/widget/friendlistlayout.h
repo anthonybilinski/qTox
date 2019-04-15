@@ -39,7 +39,7 @@ public:
 
     bool hasChatrooms() const;
     void searchChatrooms(const QString& searchString, bool hideOnline = false,
-                         bool hideOffline = false);
+                         bool hideOffline = false, bool hideBlocked = false);
 
     QLayout* getLayoutOnline() const;
     QLayout* getLayoutOffline() const;

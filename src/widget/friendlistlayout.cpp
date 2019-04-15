@@ -136,11 +136,11 @@ bool FriendListLayout::hasChatrooms() const
         && friendBlockedLayout.getLayout()->isEmpty());
 }
 
-void FriendListLayout::searchChatrooms(const QString& searchString, bool hideOnline, bool hideOffline)
+void FriendListLayout::searchChatrooms(const QString& searchString, bool hideOnline, bool hideOffline, bool hideBlocked)
 {
     friendOnlineLayout.search(searchString, hideOnline);
     friendOfflineLayout.search(searchString, hideOffline);
-    friendBlockedLayout.search(searchString, hideOffline);
+    friendBlockedLayout.search(searchString, hideBlocked);
 }
 
 QLayout* FriendListLayout::getLayoutOnline() const

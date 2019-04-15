@@ -48,7 +48,7 @@ public:
     bool cycleContacts(bool forward);
     bool cycleContacts(FriendWidget* activeChatroomWidget, bool forward);
     void search(const QString& searchString, bool updateAll = false, bool hideOnline = false,
-                bool hideOffline = false);
+                bool hideOffline = false, bool hideBlocked = false);
 
 public slots:
     void onCompactChanged(bool compact);

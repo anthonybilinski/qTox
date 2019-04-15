@@ -188,6 +188,10 @@ void Widget::init()
     filterOfflineAction->setCheckable(true);
     filterGroup->addAction(filterOfflineAction);
     filterMenu->addAction(filterOfflineAction);
+    filterBlockedAction = new QAction(this);
+    filterBlockedAction->setCheckable(true);
+    filterGroup->addAction(filterBlockedAction);
+    filterMenu->addAction(filterBlockedAction);
     filterFriendsAction = new QAction(this);
     filterFriendsAction->setCheckable(true);
     filterGroup->addAction(filterFriendsAction);
@@ -998,7 +1002,7 @@ void Widget::addFriend(uint32_t friendId, const ToxPk& friendPk, bool blocked)
         settings.setFriendActivity(friendPk, chatDate);
     }
 
-    contactListWidget->addFriendWidget(widget, Status::Status::Offline, settings.getFriendCircleID(friendPk));
+    contactListWidget->addFriendWidget(widget, blocked ? Status::Status::Blocked : Status::Status::Offline, settings.getFriendCircleID(friendPk));
 
     connect(newfriend, &Friend::aliasChanged, this, &Widget::onFriendAliasChanged);
     connect(newfriend, &Friend::displayedNameChanged, this, &Widget::onFriendDisplayedNameChanged);
@@ -1029,7 +1033,7 @@ void Widget::addFriend(uint32_t friendId, const ToxPk& friendPk, bool blocked)
     }
 
     FilterCriteria filter = getFilterCriteria();
-    widget->search(ui->searchContactText->text(), filterOffline(filter));
+    widget->search(ui->searchContactText->text(), blocked ? filterBlocked(filter) : filterOffline(filter));
 
     updateFriendActivity(newfriend);
 }
@@ -1141,7 +1145,14 @@ void Widget::onFriendAliasChanged(const ToxPk& friendId, const QString& alias)
     Status::Status status = f->getStatus();
     contactListWidget->moveWidget(friendWidget, status);
     FilterCriteria criteria = getFilterCriteria();
-    bool filter = status == Status::Status::Offline ? filterOffline(criteria) : filterOnline(criteria);
+    bool filter;
+    if (status == Status::Status::Offline) {
+        filter = filterOffline(criteria);
+    } else if (status == Status::Status::Blocked) {
+        filter = filterBlocked(criteria);
+    } else {
+        filter = filterOnline(criteria);
+    }
     friendWidget->searchName(ui->searchContactText->text(), filter);
 
     settings.setFriendAlias(friendId, alias);
@@ -2151,6 +2162,7 @@ bool Widget::filterGroups(FilterCriteria index)
     switch (index) {
     case FilterCriteria::Offline:
     case FilterCriteria::Friends:
+    case FilterCriteria::Blocked:
         return true;
     default:
         return false;
@@ -2162,6 +2174,7 @@ bool Widget::filterOffline(FilterCriteria index)
     switch (index) {
     case FilterCriteria::Online:
     case FilterCriteria::Groups:
+    case FilterCriteria::Blocked:
         return true;
     default:
         return false;
@@ -2173,6 +2186,7 @@ bool Widget::filterOnline(FilterCriteria index)
     switch (index) {
     case FilterCriteria::Offline:
     case FilterCriteria::Groups:
+    case FilterCriteria::Blocked:
         return true;
     default:
         return false;
@@ -2182,7 +2196,8 @@ bool Widget::filterOnline(FilterCriteria index)
 bool Widget::filterBlocked(FilterCriteria index)
 {
     switch (index) {
-    case FilterCriteria::Blocked:
+    case FilterCriteria::Online:
+    case FilterCriteria::Offline:
     case FilterCriteria::Groups:
         return true;
     default:
@@ -2276,7 +2291,7 @@ void Widget::searchContacts()
     FilterCriteria filter = getFilterCriteria();
 
     contactListWidget->searchChatrooms(searchString, filterOnline(filter), filterOffline(filter),
-                                       filterGroups(filter));
+                                       filterBlocked(filter), filterGroups(filter));
 
     updateFilterText();
 
@@ -2422,6 +2437,7 @@ void Widget::retranslateUi()
     filterAllAction->setText(tr("All"));
     filterOnlineAction->setText(tr("Online"));
     filterOfflineAction->setText(tr("Offline"));
+    filterBlockedAction->setText(tr("Blocked"));
     filterFriendsAction->setText(tr("Friends"));
     filterGroupsAction->setText(tr("Groups"));
     ui->searchContactText->setPlaceholderText(tr("Search Contacts"));

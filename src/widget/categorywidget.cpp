@@ -156,12 +156,12 @@ bool CategoryWidget::hasChatrooms() const
 }
 
 void CategoryWidget::search(const QString& searchString, bool updateAll, bool hideOnline,
-                            bool hideOffline)
+                            bool hideOffline, bool hideBlocked)
 {
     if (updateAll) {
-        listLayout->searchChatrooms(searchString, hideOnline, hideOffline);
+        listLayout->searchChatrooms(searchString, hideOnline, hideOffline, hideBlocked);
     }
-    bool inCategory = searchString.isEmpty() && !(hideOnline && hideOffline);
+    bool inCategory = searchString.isEmpty() && !(hideOnline && hideOffline && hideBlocked);
     setVisible(inCategory || listLayout->hasChatrooms());
 }
 
