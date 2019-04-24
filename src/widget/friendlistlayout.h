@@ -44,7 +44,7 @@ public:
     QLayout* getLayoutOnline() const;
     QLayout* getLayoutOffline() const;
     QLayout* getLayoutBlocked() const;
-    QLayout* getFriendLayout(Status s) const;
+    QLayout* getFriendLayout(Status::Status s) const;
 
 private:
     void init();

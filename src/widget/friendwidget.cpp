@@ -65,9 +65,9 @@ FriendWidget::FriendWidget(std::shared_ptr<FriendChatroom> chatroom, bool compac
     avatar->setPixmap(QPixmap(":/img/contact.svg"));
     qDebug() << "Creating friendWidget for blocked friend?" << blocked;
     if (blocked) {
-        statusPic.setPixmap(QPixmap(Widget::getStatusIconPath(Status::Status::Blocked)));
+        statusPic.setPixmap(QPixmap(Status::getIconPath(Status::Status::Blocked)));
     } else {
-        statusPic.setPixmap(QPixmap(Widget::getStatusIconPath(Status::Status::Offline)));
+        statusPic.setPixmap(QPixmap(Status::getIconPath(Status::Status::Offline)));
     }
     statusPic.setMargin(3);
 

@@ -60,7 +60,7 @@ void FriendListLayout::addFriendWidget(FriendWidget* w, Status::Status s)
 
     if (s == Status::Status::Offline) {
         friendOfflineLayout.addSortedWidget(w);
-    } else if (s == Status::Blocked) {
+    } else if (s == Status::Status::Blocked) {
         friendBlockedLayout.addSortedWidget(w);
     } else {
         friendOnlineLayout.addSortedWidget(w);
@@ -71,18 +71,18 @@ void FriendListLayout::removeFriendWidget(FriendWidget* widget, Status::Status s
 {
     if (s == Status::Status::Offline) {
         friendOfflineLayout.removeSortedWidget(widget);
-    } else if (s == Status::Blocked) {
+    } else if (s == Status::Status::Blocked) {
         friendBlockedLayout.removeSortedWidget(widget);
     } else {
         friendOnlineLayout.removeSortedWidget(widget);
     }
 }
 
-int FriendListLayout::indexOfFriendWidget(GenericChatItemWidget* widget, Status s) const
+int FriendListLayout::indexOfFriendWidget(GenericChatItemWidget* widget, Status::Status s) const
 {
-    if (s == Status::Offline) {
+    if (s == Status::Status::Offline) {
         return friendOfflineLayout.indexOfSortedWidget(widget);
-    } else if (s == Status::Blocked) {
+    } else if (s == Status::Status::Blocked) {
         return friendBlockedLayout.indexOfSortedWidget(widget);
     } else {
         return friendOnlineLayout.indexOfSortedWidget(widget);
@@ -155,7 +155,7 @@ QLayout* FriendListLayout::getLayoutBlocked() const
     return friendBlockedLayout.getLayout();
 }
 
-QLayout* FriendListLayout::getFriendLayout(Status s) const
+QLayout* FriendListLayout::getFriendLayout(Status::Status s) const
 {
     if (s == Status::Status::Offline) {
         return friendOfflineLayout.getLayout();

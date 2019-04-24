@@ -152,7 +152,7 @@ FriendWidget* ContentDialog::addFriend(std::shared_ptr<FriendChatroom> chatroom,
     const auto compact = Settings::getInstance().getCompactLayout();
     auto frnd = chatroom->getFriend();
     auto friendPk = frnd->getPublicKey();
-    auto friendWidget = new FriendWidget(chatroom, compact, frnd->getStatus() == Status::Blocked);
+    auto friendWidget = new FriendWidget(chatroom, compact, frnd->getStatus() == Status::Status::Blocked);
     contactWidgets[friendPk] = friendWidget;
     friendLayout->addFriendWidget(friendWidget, frnd->getStatus());
     contactChatForms[friendPk] = form;
@@ -273,9 +273,9 @@ int ContentDialog::getCurrentLayout(QLayout*& layout)
     int index = -1;
     if (frd != nullptr) {
         const auto status = frd->getStatus();
-        if (status == Status::Offline) {
+        if (status == Status::Status::Offline) {
             layout = friendLayout->getLayoutOffline();
-        } else if (status == Status::Blocked) {
+        } else if (status == Status::Status::Blocked) {
             layout = friendLayout->getLayoutBlocked();
         } else {
             layout = friendLayout->getLayoutOnline();
