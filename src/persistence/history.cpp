@@ -25,6 +25,183 @@
 #include "settings.h"
 #include "db/rawdatabase.h"
 
+namespace {
+    static constexpr int SCHEMA_VERSION = 2;
+
+    void dbSchema1to2(std::shared_ptr<RawDatabase> db)
+    {
+            qDebug() << "updating from 0->1";
+            // not technically a schema update, but still a database version update based on healing invalid user data
+            // we added ourself in the peers table by ToxId isntead of ToxPk. Heal this over-length entry.
+            struct BadEntry {
+                BadEntry(int64_t row, QString toxId) :
+                    row{row},
+                    toxId{toxId} {}
+                int64_t row;
+                QString toxId;
+            };
+            std::vector<BadEntry> badPeerIds;
+            db->execNow(RawDatabase::Query("SELECT id, public_key FROM peers WHERE LENGTH(public_key) == 76", [&](const QVector<QVariant>& row) {
+                badPeerIds.emplace_back(BadEntry{row[0].toInt(), row[1].toString()});
+            }));
+            int64_t validPeerId;
+            if (!badPeerIds.empty()) {
+                qDebug() << "we have" << badPeerIds.size() << "bad entries";
+                const QString desiredToxPk = ToxId{badPeerIds[0].toxId}.getPublicKey().toString();
+                bool hasDuplicate{false};
+                db->execNow(RawDatabase::Query(QStringLiteral("SELECT id FROM peers WHERE public_key='%1';")
+                    .arg(desiredToxPk), [&](const QVector<QVariant>& row) {
+                        validPeerId = row[0].toInt();
+                        hasDuplicate = true;
+                }));
+
+                if (!hasDuplicate) {
+                    qDebug() << "but we don't have a duplicate!";
+                    int64_t newId = 0;
+                    db->execNow(RawDatabase::Query(("SELECT id FROM peers ORDER BY id DESC LIMIT 1;"), [&](const QVector<QVariant>& row) {
+                        newId = row[0].toInt();
+                    }));
+                    db->execNow(RawDatabase::Query(QStringLiteral("INSERT INTO peers (id, public_key) VALUES (%1, %2);").arg(newId).arg(desiredToxPk)));
+                    validPeerId = newId;
+                }
+            }
+            for (const auto& badId : badPeerIds) {
+                qDebug() << "updating alias owners from" << badId.row << "to" << validPeerId;
+                // (owner, displayname) is unique, can't set the same displayname to a duplicate owner.
+                //if that's the case, we need to instead update all uses of this alias
+                int64_t goodAliasId;
+                std::vector<int64_t> badAliasIds;
+                // need to handle the case where the display name doesn't also exist under proper owner by updating with:
+                // db->execNow(RawDatabase::Query(QStringLiteral("UPDATE aliases SET owner = %1 WHERE owner = %2").arg(validId).arg(badId.row)));
+                bool haveDuplicateAlias{false};
+                db->execNow(RawDatabase::Query(QStringLiteral("SELECT good.id, bad.id FROM aliases good INNER JOIN aliases bad ON good.display_name=bad.display_name WHERE good.owner=%1 AND bad.owner=%2;").arg(validPeerId).arg(badId.row),
+                        [&](const QVector<QVariant>& row) {
+                    goodAliasId = row[0].toInt();
+                    badAliasIds.emplace_back(row[1].toInt());
+                    haveDuplicateAlias = true;
+                }));
+                if (!haveDuplicateAlias) {
+                    qDebug() << "we didn't have a duplicate alias, so just updating owner of existing one";
+                    db->execNow(RawDatabase::Query(QStringLiteral("UPDATE aliases SET owner = %1 WHERE owner = %2").arg(validPeerId).arg(badId.row)));
+                } else {
+                    qDebug() << "we have" << badAliasIds.size() << "bad alias owners";
+                    for (const auto badAliasId : badAliasIds) {
+                        qDebug() << "changing history alias id from" << badAliasId << "to" << goodAliasId;
+                        db->execNow(RawDatabase::Query(QStringLiteral("UPDATE history SET sender_alias = %1 WHERE sender_alias = %2;").arg(goodAliasId).arg(badAliasId)));
+                        qDebug() << "removing old alias id" << badAliasId;
+                        db->execNow(RawDatabase::Query(QStringLiteral("DELETE FROM aliases WHERE id = %1;").arg(badAliasId)));
+                    }
+                }
+                qDebug() << "removing old peer" << badId.row;
+                db->execNow(RawDatabase::Query(QStringLiteral("DELETE FROM peers WHERE id = %1").arg(badId.row)));
+            }
+            qDebug() << "all done? :o";
+    }
+    void createCurrentSchema(std::shared_ptr<RawDatabase> db)
+    {
+        QVector<RawDatabase::Query> queries;
+        queries += RawDatabase::Query(QStringLiteral(
+            "CREATE TABLE peers (id INTEGER PRIMARY KEY, public_key TEXT NOT NULL "
+            "UNIQUE);"
+            "CREATE TABLE aliases (id INTEGER PRIMARY KEY, owner INTEGER,"
+            "display_name BLOB NOT NULL, UNIQUE(owner, display_name));"
+            "CREATE TABLE history "
+            "(id INTEGER PRIMARY KEY,"
+            "timestamp INTEGER NOT NULL,"
+            "chat_id INTEGER NOT NULL,"
+            "sender_alias INTEGER NOT NULL,"
+            // even though technically a message can be null for file transfer, we've opted
+            // to just insert an empty string when there's no content, this moderately simplifies
+            // implementating to leakon as currently our database doesn't have support for optional
+            // fields. We would either have to insert "?" or "null" based on if message exists and then
+            // ensure that our blob vector always has the right number of fields. Better to just
+            // leave this as NOT NULL for now.
+            "message BLOB NOT NULL,"
+            "file_id INTEGER);"
+            "CREATE TABLE file_transfers "
+            "(id INTEGER PRIMARY KEY,"
+            "chat_id INTEGER NOT NULL,"
+            "file_restart_id BLOB NOT NULL,"
+            "file_name BLOB NOT NULL, "
+            "file_path BLOB NOT NULL,"
+            "file_hash BLOB NOT NULL,"
+            "file_size INTEGER NOT NULL,"
+            "direction INTEGER NOT NULL,"
+            "file_state INTEGER NOT NULL);"
+            "CREATE TABLE faux_offline_pending (id INTEGER PRIMARY KEY);"));
+        queries += RawDatabase::Query(QStringLiteral("PRAGMA user_version = %1;").arg(SCHEMA_VERSION));
+        db->execLater(queries);
+        qDebug() << "Database created at schema version" << SCHEMA_VERSION;
+    }
+
+    /**
+    * @brief Upgrade the db schema
+    * @note On future alterations of the database all you have to do is bump the SCHEMA_VERSION
+    * variable and add another case to the switch statement below. Make sure to fall through on each case.
+    */
+    void dbSchemaUpgrade(std::shared_ptr<RawDatabase> db)
+    {
+        int64_t databaseSchemaVersion;
+
+        if (!db->execNow(RawDatabase::Query("PRAGMA user_version", [&](const QVector<QVariant>& row) {
+                databaseSchemaVersion = row[0].toLongLong();
+            }))) {
+            qCritical() << "History failed to read user_version";
+            db.reset();
+            return;
+        }
+
+        if (databaseSchemaVersion > SCHEMA_VERSION) {
+            qWarning() << "Database version is newer than we currently support. Please upgrade qTox";
+            // We don't know what future versions have done, we have to disable db access until we re-upgrade
+            db.reset();
+            return;
+        } else if (databaseSchemaVersion == SCHEMA_VERSION) {
+            // No work to do
+            return;
+        }
+
+        QVector<RawDatabase::Query> queries;
+        // Make sure to handle the un-created case as well in the following upgrade code
+        switch (databaseSchemaVersion) {
+        case 0: {
+            // Note: 0 is a special version that is actually two versions.
+            //   possibility 1) it is a newly created database and it neesds the current schema to be created.
+            //   possibility 2) it is a old existing database, before version 1 and before we saved schema version,
+            //       and need to be updated.
+            bool newDb;
+            if (!db->execNow(RawDatabase::Query("SELECT COUNT(*) FROM sqlite_master;",
+                                                [&](const QVector<QVariant>& row) {
+                                                    newDb = row[0].toLongLong() == 0;
+                                                }))) {
+                db.reset();
+                return;
+            }
+            if (newDb) {
+                createCurrentSchema(db);
+                break; // new db is the only case where we don't incrementally upgrade through each version
+            } else {
+                // it's a db that exists but at the first versioned schema, version 0.
+                queries +=
+                    RawDatabase::Query(QStringLiteral("ALTER TABLE history ADD file_id INTEGER;"));
+            }
+        }
+            // fallthrough
+        // case 1:
+        //    do 1 -> 2 upgrade
+        //    //fallthrough
+        // etc.
+        default:
+            queries += RawDatabase::Query(QStringLiteral("PRAGMA user_version = %1;").arg(SCHEMA_VERSION));
+            db->execLater(queries);
+            qDebug() << "Database upgrade finished (databaseSchemaVersion" << databaseSchemaVersion
+                    << "->" << SCHEMA_VERSION << ")";
+        }
+    }
+
+
+} // namespace
+
 /**
  * @class History
  * @brief Interacts with the profile database to save the chat history.
@@ -36,7 +213,6 @@
 
 static constexpr int NUM_MESSAGES_DEFAULT =
     100; // arbitrary number of messages loaded when not loading by date
-static constexpr int SCHEMA_VERSION = 1;
 
 FileDbInsertionData::FileDbInsertionData()
 {
@@ -56,7 +232,7 @@ History::History(std::shared_ptr<RawDatabase> db)
         return;
     }
 
-    dbSchemaUpgrade();
+    dbSchemaUpgrade(db);
 
     // dbSchemaUpgrade may have put us in an invalid state
     if (!isValid()) {
@@ -663,106 +839,4 @@ QList<History::HistMessage> History::getChatHistory(const QString& friendPk, con
     db->execNow({queryText, rowCallback});
 
     return messages;
-}
-
-/**
- * @brief Upgrade the db schema
- * @note On future alterations of the database all you have to do is bump the SCHEMA_VERSION
- * variable and add another case to the switch statement below. Make sure to fall through on each case.
- */
-void History::dbSchemaUpgrade()
-{
-    int64_t databaseSchemaVersion;
-
-    if (!db->execNow(RawDatabase::Query("PRAGMA user_version", [&](const QVector<QVariant>& row) {
-            databaseSchemaVersion = row[0].toLongLong();
-        }))) {
-        qCritical() << "History failed to read user_version";
-        db.reset();
-        return;
-    }
-
-    if (databaseSchemaVersion > SCHEMA_VERSION) {
-        qWarning() << "Database version is newer than we currently support. Please upgrade qTox";
-        // We don't know what future versions have done, we have to disable db access until we re-upgrade
-        db.reset();
-        return;
-    } else if (databaseSchemaVersion == SCHEMA_VERSION) {
-        // No work to do
-        return;
-    }
-
-    QVector<RawDatabase::Query> queries;
-    // Make sure to handle the un-created case as well in the following upgrade code
-    switch (databaseSchemaVersion) {
-    case 0: {
-        // Note: 0 is a special version that is actually two versions.
-        //   possibility 1) it is a newly created database and it neesds the current schema to be created.
-        //   possibility 2) it is a old existing database, before version 1 and before we saved schema version,
-        //       and need to be updated.
-        bool newDb;
-        if (!db->execNow(RawDatabase::Query("SELECT COUNT(*) FROM sqlite_master;",
-                                            [&](const QVector<QVariant>& row) {
-                                                newDb = row[0].toLongLong() == 0;
-                                            }))) {
-            db.reset();
-            return;
-        }
-        if (newDb) {
-            createCurrentSchema();
-            break; // new db is the only case where we don't incrementally upgrade through each version
-        } else {
-            // it's a db that exists but at the first versioned schema, version 0.
-            queries +=
-                RawDatabase::Query(QStringLiteral("ALTER TABLE history ADD file_id INTEGER;"));
-        }
-    }
-        // fallthrough
-    // case 1:
-    //    do 1 -> 2 upgrade
-    //    //fallthrough
-    // etc.
-    default:
-        queries += RawDatabase::Query(QStringLiteral("PRAGMA user_version = %1;").arg(SCHEMA_VERSION));
-        db->execLater(queries);
-        qDebug() << "Database upgrade finished (databaseSchemaVersion" << databaseSchemaVersion
-                 << "->" << SCHEMA_VERSION << ")";
-    }
-}
-
-void History::createCurrentSchema()
-{
-    QVector<RawDatabase::Query> queries;
-    queries += RawDatabase::Query(QStringLiteral(
-        "CREATE TABLE peers (id INTEGER PRIMARY KEY, public_key TEXT NOT NULL "
-        "UNIQUE);"
-        "CREATE TABLE aliases (id INTEGER PRIMARY KEY, owner INTEGER,"
-        "display_name BLOB NOT NULL, UNIQUE(owner, display_name));"
-        "CREATE TABLE history "
-        "(id INTEGER PRIMARY KEY,"
-        "timestamp INTEGER NOT NULL,"
-        "chat_id INTEGER NOT NULL,"
-        "sender_alias INTEGER NOT NULL,"
-        // even though technically a message can be null for file transfer, we've opted
-        // to just insert an empty string when there's no content, this moderately simplifies
-        // implementating to leakon as currently our database doesn't have support for optional
-        // fields. We would either have to insert "?" or "null" based on if message exists and then
-        // ensure that our blob vector always has the right number of fields. Better to just
-        // leave this as NOT NULL for now.
-        "message BLOB NOT NULL,"
-        "file_id INTEGER);"
-        "CREATE TABLE file_transfers "
-        "(id INTEGER PRIMARY KEY,"
-        "chat_id INTEGER NOT NULL,"
-        "file_restart_id BLOB NOT NULL,"
-        "file_name BLOB NOT NULL, "
-        "file_path BLOB NOT NULL,"
-        "file_hash BLOB NOT NULL,"
-        "file_size INTEGER NOT NULL,"
-        "direction INTEGER NOT NULL,"
-        "file_state INTEGER NOT NULL);"
-        "CREATE TABLE faux_offline_pending (id INTEGER PRIMARY KEY);"));
-    queries += RawDatabase::Query(QStringLiteral("PRAGMA user_version = %1;").arg(SCHEMA_VERSION));
-    db->execLater(queries);
-    qDebug() << "Database created at schema version" << SCHEMA_VERSION;
 }
