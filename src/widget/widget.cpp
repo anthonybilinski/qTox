@@ -645,6 +645,7 @@ void Widget::onStatusSet(Status::Status status)
 {
     ui->statusButton->setProperty("status", static_cast<int>(status));
     ui->statusButton->setIcon(prepareIcon(getIconPath(status), icon_size, icon_size));
+    qDebug() << "setting status button to" << static_cast<int>(status);
     updateIcons();
 }
 
