@@ -1039,8 +1039,6 @@ void Widget::addFriend(uint32_t friendId, const ToxPk& friendPk)
 
     FilterCriteria filter = getFilterCriteria();
     widget->search(ui->searchContactText->text(), filterOffline(filter));
-
-    updateFriendActivity(newfriend);
 }
 
 void Widget::addFriendFailed(const ToxPk&, const QString& errorInfo)
@@ -1495,14 +1493,13 @@ void Widget::onFriendRequestReceived(const ToxPk& friendPk, const QString& messa
 void Widget::updateFriendActivity(const Friend* frnd)
 {
     const ToxPk& pk = frnd->getPublicKey();
-    QDate date = settings.getFriendActivity(pk);
-    if (date != QDate::currentDate()) {
-        // Update old activity before after new one. Store old date first.
-        QDate oldDate = settings.getFriendActivity(pk);
-        settings.setFriendActivity(pk, QDate::currentDate());
+    const QDate oldDate = settings.getFriendActivity(pk);
+    const QDate newDate = QDate::currentDate();
+    if (oldDate != newDate) {
+        settings.setFriendActivity(pk, newDate);
         FriendWidget* widget = friendWidgets[frnd->getPublicKey()];
         contactListWidget->moveWidget(widget, frnd->getStatus());
-        contactListWidget->updateActivityDate(oldDate);
+        contactListWidget->updateActivityDate(newDate);
     }
 }
 
