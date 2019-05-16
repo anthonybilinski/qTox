@@ -285,12 +285,12 @@ void GenericChatForm::hideFileMenu()
         fileFlyout->animateHide();
 }
 
-QDate GenericChatForm::getLatestDate() const
+QDateTime GenericChatForm::getLatestDate() const
 {
     return getDate(chatWidget->getLatestLine());
 }
 
-QDate GenericChatForm::getFirstDate() const
+QDateTime GenericChatForm::getFirstDate() const
 {
     return getDate(chatWidget->getFirstLine());
 }
@@ -401,7 +401,7 @@ ChatMessage::Ptr GenericChatForm::createMessage(const ToxPk& author, const QStri
     bool isSelf = author == core->getSelfId().getPublicKey();
     QString myNickName = core->getUsername().isEmpty() ? author.toString() : core->getUsername();
     QString authorStr = isSelf ? myNickName : resolveToxPk(author);
-    if (getLatestDate() != QDate::currentDate()) {
+    if (getLatestDate() != QDateTime::currentDateTime()) {
         addSystemDateMessage();
     }
 
@@ -552,7 +552,7 @@ void GenericChatForm::onChatMessageFontChanged(const QFont& font)
 void GenericChatForm::addSystemInfoMessage(const QString& message, ChatMessage::SystemMessageType type,
                                            const QDateTime& datetime)
 {
-    if (getLatestDate() != QDate::currentDate()) {
+    if (getLatestDate() != QDateTime::currentDateTime()) {
         addSystemDateMessage();
     }
 
@@ -569,19 +569,19 @@ void GenericChatForm::addSystemDateMessage()
     insertChatMessage(ChatMessage::createChatInfoMessage(dateText, ChatMessage::INFO, QDateTime()));
 }
 
-QDate GenericChatForm::getDate(const ChatLine::Ptr &chatLine) const
+QDateTime GenericChatForm::getDate(const ChatLine::Ptr &chatLine) const
 {
     if (chatLine) {
         Timestamp* const timestamp = qobject_cast<Timestamp*>(chatLine->getContent(2));
 
         if (timestamp) {
-            return timestamp->getTime().date();
+            return timestamp->getTime();
         } else {
-            return QDate::currentDate();
+            return QDateTime::currentDateTime();
         }
     }
 
-    return QDate();
+    return QDateTime();
 }
 
 void GenericChatForm::disableSearchText()
@@ -626,7 +626,7 @@ bool GenericChatForm::searchInText(const QString& phrase, const ParameterSearch&
     } else if (parameter.period == PeriodSearch::AfterDate) {
         const auto lambda = [=](const ChatLine::Ptr& item) {
             const auto d = getDate(item);
-            return d.isValid() && parameter.date <= d;
+            return d.isValid() && QDateTime{parameter.date} <= d;
           };
 
         const auto find = std::find_if(lines.begin(), lines.end(), lambda);
@@ -638,7 +638,7 @@ bool GenericChatForm::searchInText(const QString& phrase, const ParameterSearch&
 #if QT_VERSION > QT_VERSION_CHECK(5, 6, 0)
         const auto lambda = [=](const ChatLine::Ptr& item) {
             const auto d = getDate(item);
-            return d.isValid() && parameter.date >= d;
+            return d.isValid() && QDateTime{parameter.date} >= d;
           };
 
         const auto find = std::find_if(lines.rbegin(), lines.rend(), lambda);
@@ -1003,7 +1003,7 @@ void GenericChatForm::updateShowDateInfo(const ChatLine::Ptr& line)
 {
     const auto date = getDate(line);
 
-    if (date.isValid() && date != QDate::currentDate()) {
+    if (date.isValid() && date != QDateTime::currentDateTime()) {
         const auto dateText = QStringLiteral("<b>%1<\b>").arg(date.toString(Settings::getInstance().getDateFormat()));
         dateInfo->setText(dateText);
         dateInfo->setVisible(true);

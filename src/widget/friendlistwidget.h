@@ -62,7 +62,7 @@ public:
 
     void cycleContacts(GenericChatroomWidget* activeChatroomWidget, bool forward);
 
-    void updateActivityDate(const QDate& date);
+    void updateActivityDate(const QDateTime& date);
     void reDraw();
 
 signals:
@@ -92,7 +92,6 @@ private:
     FriendListLayout* listLayout;
     GenericChatItemLayout* circleLayout = nullptr;
     GenericChatItemLayout groupLayout;
-    QVBoxLayout* activityLayout = nullptr;
     QTimer* dayTimer;
 };
 

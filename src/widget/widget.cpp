@@ -1001,8 +1001,8 @@ void Widget::addFriend(uint32_t friendId, const ToxPk& friendPk)
     friendWidgets[friendPk] = widget;
     chatForms[friendPk] = friendForm;
 
-    QDate activityDate = settings.getFriendActivity(friendPk);
-    QDate chatDate = friendForm->getLatestDate();
+    QDateTime activityDate = settings.getFriendActivity(friendPk);
+    QDateTime chatDate = friendForm->getLatestDate();
     if (chatDate > activityDate && chatDate.isValid()) {
         settings.setFriendActivity(friendPk, chatDate);
     }
@@ -1039,6 +1039,9 @@ void Widget::addFriend(uint32_t friendId, const ToxPk& friendPk)
 
     FilterCriteria filter = getFilterCriteria();
     widget->search(ui->searchContactText->text(), filterOffline(filter));
+
+    qDebug() << "udpating status activity of friend even though it's just GUI??";
+    updateFriendActivity(newfriend);
 }
 
 void Widget::addFriendFailed(const ToxPk&, const QString& errorInfo)
@@ -1493,14 +1496,11 @@ void Widget::onFriendRequestReceived(const ToxPk& friendPk, const QString& messa
 void Widget::updateFriendActivity(const Friend* frnd)
 {
     const ToxPk& pk = frnd->getPublicKey();
-    const QDate oldDate = settings.getFriendActivity(pk);
-    const QDate newDate = QDate::currentDate();
-    if (oldDate != newDate) {
-        settings.setFriendActivity(pk, newDate);
-        FriendWidget* widget = friendWidgets[frnd->getPublicKey()];
-        contactListWidget->moveWidget(widget, frnd->getStatus());
-        contactListWidget->updateActivityDate(newDate);
-    }
+    QDateTime date = QDateTime::currentDateTime();
+    settings.setFriendActivity(pk, date);
+    FriendWidget* widget = friendWidgets[frnd->getPublicKey()];
+    contactListWidget->moveWidget(widget, frnd->getStatus());
+    contactListWidget->updateActivityDate(date);
 }
 
 void Widget::removeFriend(Friend* f, bool fake)
