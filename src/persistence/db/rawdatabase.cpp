@@ -223,7 +223,7 @@ bool RawDatabase::testUsable()
 bool RawDatabase::updateSavedCipherParameters(const QString& hexKey)
 {
     setKey(hexKey); // setKey again because a SELECT has already been run, causing crypto settings to take effect
-    if (!setCipherParameters(3)) {
+    if (!setCipherParameters(3) || !testUsable()) {
         return false;
     }
 
@@ -282,7 +282,7 @@ bool RawDatabase::setCipherParameters(int majorVersion, const QString& database)
             return false;
         }
     }
-    qDebug() << "Setting SQLCipher 4.x parameters";
+    qDebug().nospace() << "Setting SQLCipher " << majorVersion << ".x parameters";
     return execNow(defaultParams.replace("database.", prefix));
 }
 
