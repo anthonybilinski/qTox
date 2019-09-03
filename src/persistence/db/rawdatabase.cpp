@@ -27,6 +27,7 @@
 #include <QFile>
 #include <QMetaObject>
 #include <QMutexLocker>
+#include <QTime>
 
 
 /**
@@ -142,6 +143,8 @@ RawDatabase::~RawDatabase()
  */
 bool RawDatabase::open(const QString& path, const QString& hexKey)
 {
+    QTime myTimer;
+    myTimer.start();
     if (QThread::currentThread() != workerThread.get()) {
         bool ret;
         QMetaObject::invokeMethod(this, "open", Qt::BlockingQueuedConnection, Q_RETURN_ARG(bool, ret),
@@ -180,6 +183,7 @@ bool RawDatabase::open(const QString& path, const QString& hexKey)
             return false;
         }
     }
+    qDebug() << "Spent" << myTimer.elapsed() << "ms opening the database";
     return true;
 }
 
@@ -366,7 +370,10 @@ bool RawDatabase::execNow(const QVector<RawDatabase::Query>& statements)
         qWarning() << "Trying to exec, but the database is not open";
         return false;
     }
-
+    static int numExecs = 0;
+    static int msSpent = 0;
+    QTime myTimer;
+    myTimer.start();
     std::atomic_bool done{false};
     std::atomic_bool success{false};
 
@@ -385,6 +392,8 @@ bool RawDatabase::execNow(const QVector<RawDatabase::Query>& statements)
     while (!done.load(std::memory_order_acquire))
         QThread::msleep(10);
 
+    msSpent += myTimer.elapsed();
+    qDebug() << "Spent" << msSpent << "ms doing execNow for" << ++numExecs << "th time";
     return success.load(std::memory_order_acquire);
 }
 
@@ -678,6 +687,7 @@ QString RawDatabase::deriveKey(const QString& password, const QByteArray& salt)
  */
 void RawDatabase::process()
 {
+    QTime myTimer;
     assert(QThread::currentThread() == workerThread.get());
 
     if (!sqlite)
@@ -693,6 +703,7 @@ void RawDatabase::process()
                 return;
             trans = pendingTransactions.dequeue();
         }
+        myTimer.start();
 
         // In case we exit early, prepare to signal errors
         if (trans.success != nullptr)
@@ -752,14 +763,16 @@ void RawDatabase::process()
                 int column_count = sqlite3_column_count(stmt);
                 int result;
                 do {
+                    QTime mytimer2;
+                    mytimer2.start();
                     result = sqlite3_step(stmt);
+                    qDebug() << "step" << sqlite3_sql(stmt) << "took" << mytimer2.elapsed() << "ms";
 
                     // Execute our row callback
                     if (result == SQLITE_ROW && query.rowCallback) {
                         QVector<QVariant> row;
                         for (int i = 0; i < column_count; ++i)
                             row += extractData(stmt, i);
-
                         query.rowCallback(row);
                     }
                 } while (result == SQLITE_ROW);
@@ -784,8 +797,9 @@ void RawDatabase::process()
                 }
             }
 
-            if (query.insertCallback)
+            if (query.insertCallback) {
                 query.insertCallback(RowId{sqlite3_last_insert_rowid(sqlite)});
+            }
         }
 
         if (trans.success != nullptr)
@@ -800,8 +814,10 @@ void RawDatabase::process()
         }
 
         // Signal transaction results
-        if (trans.done != nullptr)
+        if (trans.done != nullptr) {
             trans.done->store(true, std::memory_order_release);
+            qDebug() << "took" << myTimer.elapsed() << "ms to process";
+        }
     }
 }
 
