@@ -766,7 +766,6 @@ void RawDatabase::process()
                     QTime mytimer2;
                     mytimer2.start();
                     result = sqlite3_step(stmt);
-                    qDebug() << "step" << sqlite3_sql(stmt) << "took" << mytimer2.elapsed() << "ms";
 
                     // Execute our row callback
                     if (result == SQLITE_ROW && query.rowCallback) {
