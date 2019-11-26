@@ -200,7 +200,6 @@ protected:
     IChatLog& chatLog;
     IMessageDispatcher& messageDispatcher;
     SearchResult searchResult;
-    std::map<ChatLogIdx, ChatMessage::Ptr> messages;
     bool colorizeNames = false;
 };
 

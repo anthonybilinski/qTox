@@ -52,8 +52,8 @@ T clamp(T x, T min, T max)
     return x;
 }
 
-ChatLog::ChatLog(const bool canRemove, QWidget* parent)
-    : QGraphicsView(parent), canRemove(canRemove)
+ChatLog::ChatLog(QWidget* parent)
+    : QGraphicsView(parent)
 {
     // Create the scene
     busyScene = new QGraphicsScene(this);
@@ -396,8 +396,8 @@ void ChatLog::insertChatlineAtBottom(const QList<ChatLine::Ptr>& newLines)
 
     const bool stickToBtm = stickToBottom();
 
-    auto firstVisible = visibleLines.first()->getRow();
-    if (canRemove && lines.size() > maxMessages) {
+    // removeLinesAroundView();
+    if (lines.size() > maxMessages) {
         removeFirsts(DEF_NUM_MSG_TO_LOAD);
     }
 
@@ -450,7 +450,8 @@ void ChatLog::insertChatlinesOnTop(const QList<ChatLine::Ptr>& newLines)
         combLines.push_back(l);
     }
 
-    if (canRemove && lines.size() > maxMessages) {
+    // removeLinesAroundView();
+    if (lines.size() > maxMessages) {
         removeLasts(DEF_NUM_MSG_TO_LOAD);
     }
 
@@ -734,13 +735,14 @@ void ChatLog::reloadTheme()
 
 void ChatLog::removeLinesAroundView()
 {
-    auto firstVisible = visibleLines.first()->getRow();
-    auto lastVisible = visibleLines.last()->getRow();
-    
-    if (canRemove && lines.size() > maxMessages) {
-        removeFirsts(DEF_NUM_MSG_TO_LOAD);
+    if (lines.size() < maxMessages) {
+        return;
     }
 
+    auto firstVisible = visibleLines.first()->getRow();
+    auto lastVisible = visibleLines.last()->getRow();
+    qDebug() << "gonna remove some lines! first visible:" << firstVisible << "last visible:" << lastVisible;
+    // removeFirsts(DEF_NUM_MSG_TO_LOAD);
 }
 
 void ChatLog::removeFirsts(const int num)
