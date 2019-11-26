@@ -397,7 +397,7 @@ void ChatLog::insertChatlineAtBottom(const QList<ChatLine::Ptr>& newLines)
     const bool stickToBtm = stickToBottom();
 
     auto firstVisible = visibleLines.first()->getRow();
-    if (canRemove && lines.size() + DEF_NUM_MSG_TO_LOAD >= maxMessages) {
+    if (canRemove && lines.size() > maxMessages) {
         removeFirsts(DEF_NUM_MSG_TO_LOAD);
     }
 
@@ -450,7 +450,7 @@ void ChatLog::insertChatlinesOnTop(const QList<ChatLine::Ptr>& newLines)
         combLines.push_back(l);
     }
 
-    if (canRemove && lines.size() + DEF_NUM_MSG_TO_LOAD >= maxMessages) {
+    if (canRemove && lines.size() > maxMessages) {
         removeLasts(DEF_NUM_MSG_TO_LOAD);
     }
 
@@ -736,7 +736,8 @@ void ChatLog::removeLinesAroundView()
 {
     auto firstVisible = visibleLines.first()->getRow();
     auto lastVisible = visibleLines.last()->getRow();
-    if (canRemove && lines.size() + DEF_NUM_MSG_TO_LOAD >= maxMessages) {
+    
+    if (canRemove && lines.size() > maxMessages) {
         removeFirsts(DEF_NUM_MSG_TO_LOAD);
     }
 
