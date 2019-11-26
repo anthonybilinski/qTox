@@ -407,10 +407,10 @@ void ChatLog::insertChatlineAtBottom(const QList<ChatLine::Ptr>& newLines)
 
     layout(lines.last()->getRow(), lines.size(), useableWidth());
 
-    if (visibleLines.size() > 1) {
-        startResizeWorker(visibleLines[1]);
-    } else {
+    if (stickToBottom()) {
         startResizeWorker();
+    } else {
+        emit messageAddedBelowView();
     }
 }
 

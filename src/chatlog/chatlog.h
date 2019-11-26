@@ -81,6 +81,7 @@ signals:
     void firstVisibleLineChanged(const ChatLine::Ptr&);
     void loadHistoryLower();
     void loadHistoryUpper();
+    void messageAddedBelowView();
 
 public slots:
     void forceRelayout();

@@ -87,6 +87,7 @@ public:
 signals:
     void messageInserted();
     void messageNotFoundShow(SearchDirection direction);
+    void messageAddedBelowView();
 
 public slots:
     void focusInput();

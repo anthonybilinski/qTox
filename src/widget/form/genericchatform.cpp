@@ -363,6 +363,7 @@ GenericChatForm::GenericChatForm(const Contact* contact, IChatLog& chatLog,
     connect(chatWidget, &ChatLog::firstVisibleLineChanged, this, &GenericChatForm::updateShowDateInfo);
     connect(chatWidget, &ChatLog::loadHistoryLower, this, &GenericChatForm::loadHistoryLower);
     connect(chatWidget, &ChatLog::loadHistoryUpper, this, &GenericChatForm::loadHistoryUpper);
+    connect(chatWidget, &ChatLog::messageAddedBelowView, this, &GenericChatForm::messageAddedBelowView);
 
     connect(searchForm, &SearchForm::searchInBegin, this, &GenericChatForm::searchInBegin);
     connect(searchForm, &SearchForm::searchUp, this, &GenericChatForm::onSearchUp);

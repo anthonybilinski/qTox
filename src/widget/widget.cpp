@@ -1182,6 +1182,7 @@ void Widget::addFriend(uint32_t friendId, const ToxPk& friendPk)
     connect(friendForm, &ChatForm::stopNotification, this, &Widget::onStopNotification);
     connect(friendForm, &ChatForm::endCallNotification, this, &Widget::onCallEnd);
     connect(friendForm, &ChatForm::rejectCall, this, &Widget::onRejectCall);
+    connect(friendForm, &GenericChatForm::messageAddedBelowView, this, &Widget::newMessageAlert)
 
     connect(widget, &FriendWidget::newWindowOpened, this, &Widget::openNewDialog);
     connect(widget, &FriendWidget::chatroomWidgetClicked, this, &Widget::onChatroomWidgetClicked);
