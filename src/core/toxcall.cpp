@@ -143,7 +143,7 @@ ToxFriendCall::ToxFriendCall(uint32_t FriendNum, bool VideoEnabled, CoreAV& av, 
             source.setupDefault();
         }
         source.subscribe();
-        videoInConn = QObject::connect(&source, &VideoSource::frameAvailable,
+        videoInConn = QObject::connect(&source, &VideoSource::frameAvailable, &av,
                                        [&av, FriendNum](std::shared_ptr<VideoFrame> frame) {
                                            av.sendCallVideo(FriendNum, frame);
                                        });
@@ -225,7 +225,7 @@ ToxGroupCall::~ToxGroupCall()
 void ToxGroupCall::onAudioSourceInvalidated()
 {
     auto newSrc = audio.makeSource();
-    connect(audioSource.get(), &IAudioSource::frameAvailable,
+    connect(audioSource.get(), &IAudioSource::frameAvailable, this,
             [this](const int16_t* pcm, size_t samples, uint8_t chans, uint32_t rate) {
                 if (this->group.getPeersCount() <= 1) {
                    return;
