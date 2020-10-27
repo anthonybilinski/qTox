@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "src/core/contactid.h"
 #include "src/core/icorefriendmessagesender.h"
 #include "src/model/friend.h"
 #include "src/model/imessagedispatcher.h"
@@ -41,7 +42,7 @@ public:
     std::pair<DispatchedMessageId, DispatchedMessageId> sendMessage(bool isAction,
                                                                     const QString& content) override;
 
-    DispatchedMessageId sendExtendedMessage(const QString& content, ExtensionSet extensions) override;
+    DispatchedMessageId sendExtendedMessage(const QString& content, ExtensionSet extensions, const ContactId& friendPk) override;
     void onMessageReceived(bool isAction, const QString& content);
     void onReceiptReceived(ReceiptNum receipt);
     void onExtMessageReceived(const QString& message);

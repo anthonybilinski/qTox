@@ -65,7 +65,7 @@ GroupMessageDispatcher::sendMessage(bool isAction, QString const& content)
     return std::make_pair(firstMessageId, lastMessageId);
 }
 
-DispatchedMessageId GroupMessageDispatcher::sendExtendedMessage(const QString& content, ExtensionSet extensions)
+DispatchedMessageId GroupMessageDispatcher::sendExtendedMessage(const QString& content, ExtensionSet extensions, const ContactId& group)
 {
     // Stub this api to immediately fail
     auto messageId = nextMessageId++;

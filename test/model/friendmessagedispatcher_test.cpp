@@ -38,7 +38,7 @@ public:
         , currentReceiptId(currentReceiptId)
     {}
 
-    uint64_t addExtendedMessage(QString message) override
+    uint64_t addExtendedMessage(QString message, uint32_t friendId) override
     {
         this->message = message;
         return currentReceiptId++;
@@ -62,6 +62,11 @@ public:
     std::unique_ptr<ICoreExtPacket> getPacket(uint32_t friendId) override
     {
         return std::unique_ptr<MockCoreExtPacket>(new MockCoreExtPacket(numSentMessages, currentReceiptId));
+    }
+
+    uint64_t getMaxSendingSize(uint32_t friendId) override
+    {
+        return 1024*1024*1024;
     }
 
     uint64_t numSentMessages;
@@ -326,7 +331,7 @@ void TestFriendMessageDispatcher::testOfflineExtensionMessages()
     auto requiredExtensions = ExtensionSet();
     requiredExtensions[ExtensionType::messages] = true;
 
-    friendMessageDispatcher->sendExtendedMessage("Test", requiredExtensions);
+    friendMessageDispatcher->sendExtendedMessage("Test", requiredExtensions, f->getPersistentId());
 
     f->setStatus(Status::Status::Online);
     f->setExtendedMessageSupport(true);
@@ -338,7 +343,7 @@ void TestFriendMessageDispatcher::testOfflineExtensionMessages()
 
     f->setStatus(Status::Status::Offline);
 
-    friendMessageDispatcher->sendExtendedMessage("Test", requiredExtensions);
+    friendMessageDispatcher->sendExtendedMessage("Test", requiredExtensions, f->getPersistentId());
 
     f->setStatus(Status::Status::Online);
     f->setExtendedMessageSupport(false);

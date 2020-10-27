@@ -55,7 +55,7 @@ FriendMessageDispatcher::sendMessage(bool isAction, const QString& content)
 /**
  * @see IMessageDispatcher::sendExtendedMessage
  */
-DispatchedMessageId FriendMessageDispatcher::sendExtendedMessage(const QString& content, ExtensionSet extensions)
+DispatchedMessageId FriendMessageDispatcher::sendExtendedMessage(const QString& content, ExtensionSet extensions, const ContactId& friendPk)
 {
     auto messageId = nextMessageId++;
 
@@ -150,10 +150,11 @@ void FriendMessageDispatcher::sendExtendedProcessedMessage(Message const& messag
 
     auto receipt = ExtendedReceiptNum();
 
-    auto packet = coreExtPacketAllocator.getPacket(f.getId());
+    const auto friendId = f.getId();
+    auto packet = coreExtPacketAllocator.getPacket(friendId);
 
     if (message.extensionSet[ExtensionType::messages]) {
-        receipt.get() = packet->addExtendedMessage(message.content);
+        receipt.get() = packet->addExtendedMessage(message.content, friendId);
     }
 
     const auto messageSent = packet->send();

@@ -55,6 +55,9 @@ std::vector<Message> MessageProcessor::processOutgoingMessage(bool isAction, QSt
 {
     std::vector<Message> ret;
 
+    // TODO: add splitting for extended messages too :S
+    // I guess ideally would hold a map of friend -> max size,
+    // that's populated by signal when the friends negotiation finishes
     const auto needsSplit = !extensions[ExtensionType::messages] || isAction;
     const auto splitMsgs = needsSplit
         ? Core::splitMessage(content)

@@ -55,7 +55,7 @@ public:
      *       as broken
      */
     virtual DispatchedMessageId
-    sendExtendedMessage(const QString& content, ExtensionSet extensions) = 0;
+    sendExtendedMessage(const QString& content, ExtensionSet extensions, const ContactId& contact) = 0;
 
 signals:
     /**
