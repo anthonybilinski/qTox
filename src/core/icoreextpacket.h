@@ -44,7 +44,7 @@ public:
      * @note Any other extensions related to this message have to be added
      * _before_ the message itself
      */
-    virtual uint64_t addExtendedMessage(QString message) = 0;
+    virtual uint64_t addExtendedMessage(QString message, uint32_t friendId) = 0;
 
     /**
      * @brief Consumes the packet constructed with PacketBuilder packet and
@@ -65,4 +65,5 @@ public:
      * @brief Gets a new packet builder for friend with core friend id friendId
      */
     virtual std::unique_ptr<ICoreExtPacket> getPacket(uint32_t friendId) = 0;
+    virtual uint64_t getMaxSendingSize(uint32_t friendId) = 0;
 };

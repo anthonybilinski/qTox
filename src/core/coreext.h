@@ -98,7 +98,7 @@ public:
             other.packetList = nullptr;
         }
 
-        uint64_t addExtendedMessage(QString message) override;
+        uint64_t addExtendedMessage(QString message, uint32_t friendId) override;
 
         bool send() override;
     private:
@@ -110,6 +110,7 @@ public:
     };
 
     std::unique_ptr<ICoreExtPacket> getPacket(uint32_t friendId) override;
+    uint64_t getMaxSendingSize(uint32_t friendId) override;
 
 signals:
     void extendedMessageReceived(uint32_t friendId, const QString& message);

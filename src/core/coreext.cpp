@@ -52,7 +52,8 @@ CoreExt::CoreExt(ExtensionPtr<ToxExt> toxExt_)
             CoreExt::onExtendedMessageReceived,
             CoreExt::onExtendedMessageReceipt,
             CoreExt::onExtendedMessageNegotiation,
-            this),
+            this,
+            TOX_EXTENSION_MESSAGES_DEFAULT_MAX_RECEIVING_MESSAGE_SIZE),
         tox_extension_messages_free);
 }
 
@@ -84,7 +85,22 @@ std::unique_ptr<ICoreExtPacket> CoreExt::getPacket(uint32_t friendId)
         PacketPassKey{}));
 }
 
-uint64_t CoreExt::Packet::addExtendedMessage(QString message)
+uint64_t CoreExt::getMaxSendingSize(uint32_t friendId)
+{
+    enum Tox_Extension_Messages_Error err;
+    auto maxSendingSize = tox_extension_messages_get_max_sending_size(
+        toxExtMessages.get(),
+        friendId,
+        &err);
+    
+    if (err != TOX_EXTENSION_MESSAGES_SUCCESS) {
+        qWarning() << "Error getting max sending size for friend" << friendId;
+        maxSendingSize = 0;
+    }
+    return maxSendingSize;
+}
+
+uint64_t CoreExt::Packet::addExtendedMessage(QString message, uint32_t friendId)
 {
     if (hasBeenSent) {
         assert(false);
@@ -94,12 +110,34 @@ uint64_t CoreExt::Packet::addExtendedMessage(QString message)
         return UINT64_MAX;
     }
 
+    int size = message.toUtf8().size();
+    enum Tox_Extension_Messages_Error err;
+    auto maxSize = static_cast<int>(tox_extension_messages_get_max_sending_size(
+        toxExtMessages,
+        friendId,
+        &err));
+
+    if (size > maxSize) {
+        assert(false);
+        qCritical() << "addExtendedMessage called with message of size:" << size
+                    << "when max is:" << maxSize << ". Ignoring.";
+        return false;
+    }
+
     ToxString toxString(message);
-    return tox_extension_messages_append(
+    const auto receipt = tox_extension_messages_append(
         toxExtMessages,
         packetList,
         toxString.data(),
-        toxString.size());
+        toxString.size(),
+        friendId,
+        &err);
+    
+    if (err != TOX_EXTENSION_MESSAGES_SUCCESS) {
+        qWarning() << "Error sending extension message";
+    }
+
+    return receipt;
 }
 
 bool CoreExt::Packet::send()
@@ -148,4 +186,3 @@ void CoreExt::onExtendedMessageNegotiation(uint32_t friendId, bool compatible, v
     auto coreExt = static_cast<CoreExt*>(userData);
     emit coreExt->extendedMessageSupport(friendId, compatible);
 }
-
