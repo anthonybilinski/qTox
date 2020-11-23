@@ -9,15 +9,13 @@ branches:
     - master
     - /^v\d+\.\d+-dev$/
     - /^v(\d+\.){2}\d+$/
+    - macos_backwards_compatibility
 
 stages:
   - Linux
-  - name: "Windows Stage 1: Dependencies (OpenSSL, Qt)"
-    if: type = push OR type = cron
-  - name: "Windows Stage 2: Dependencies (other)"
-    if: type = push OR type = cron
+  - name: "Stage 1: Dependencies (OpenSSL, Qt)"
+  - name: "Stage 2: Dependencies (other)"
   - name: "Windows Stage 3: qTox"
-    if: type = push OR type = cron
 
 env:
   global:
@@ -46,7 +44,7 @@ jobs:
       os: linux
       env: JOB=build-ubuntu-16-04
       script: "./.travis/$JOB.sh"
-    - stage: "Windows Stage 1: Dependencies (OpenSSL, Qt)"
+    - stage: "Stage 1: Dependencies (OpenSSL, Qt)"
       os: linux
       # Makes the cache this job creates avaiable only to jobs with WINDOWS_BUILD_ARCH_CACHE_TRICK_VARIABLE=i686,
       # making sure that i686 and x86_64 caches don't overwrite each other
@@ -57,7 +55,7 @@ jobs:
       cache:
         directories:
           - /opt/build-windows/i686
-    - stage: "Windows Stage 1: Dependencies (OpenSSL, Qt)"
+    - stage: "Stage 1: Dependencies (OpenSSL, Qt)"
       os: linux
       env: WINDOWS_BUILD_ARCH_CACHE_TRICK_VARIABLE=x86_64
       script: ./.travis/build-windows.sh x86_64 release /opt/build-windows/x86_64 stage1
@@ -66,7 +64,20 @@ jobs:
       cache:
         directories:
           - /opt/build-windows/x86_64
-    - stage: "Windows Stage 2: Dependencies (other)"
+    - stage: "Stage 1: Dependencies (OpenSSL, Qt)"
+      os: osx
+      osx_image: xcode12.2
+      env: JOB=build-osx
+      cache:
+        timeout: 300 # seconds
+        ccache: true
+        directories:
+          - $HOME/Library/Caches/Homebrew
+      before_cache:
+        - brew cleanup
+      script:
+        - "./.travis/$JOB.sh 1"
+    - stage: "Stage 2: Dependencies (other)"
       os: linux
       env: WINDOWS_BUILD_ARCH_CACHE_TRICK_VARIABLE=i686
       script: ./.travis/build-windows.sh i686 release /opt/build-windows/i686 stage2
@@ -75,7 +86,7 @@ jobs:
       cache:
         directories:
           - /opt/build-windows/i686
-    - stage: "Windows Stage 2: Dependencies (other)"
+    - stage: "Stage 2: Dependencies (other)"
       os: linux
       env: WINDOWS_BUILD_ARCH_CACHE_TRICK_VARIABLE=x86_64
       script: ./.travis/build-windows.sh x86_64 release /opt/build-windows/x86_64 stage2
@@ -84,6 +95,19 @@ jobs:
       cache:
         directories:
           - /opt/build-windows/x86_64
+    - stage: "Stage 2: Dependencies (other)"
+      os: osx
+      osx_image: xcode12.2
+      env: JOB=build-osx
+      cache:
+        timeout: 300 # seconds
+        ccache: true
+        directories:
+          - $HOME/Library/Caches/Homebrew
+      before_cache:
+        - brew cleanup
+      script:
+        - "./.travis/$JOB.sh 2"
     - stage: "Windows Stage 3: qTox"
       os: linux
       env: WINDOWS_BUILD_ARCH_CACHE_TRICK_VARIABLE=i686
@@ -146,7 +170,7 @@ jobs:
           - /opt/build-windows/x86_64
     - stage: "macOS, AppImage and Flatpak"
       os: osx
-      osx_image: xcode10.2 # macOS 10.14, oldest supported SDK according to https://developer.apple.com/support/xcode/
+      osx_image: xcode12.2
       env: JOB=build-osx
       cache:
         timeout: 300 # seconds

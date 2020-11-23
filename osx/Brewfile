@@ -17,8 +17,28 @@ brew "openal-soft"
 # accelerate builds with ccache
 brew "ccache"
 
+
+#brew "git", args: ["build-from-source"]
+#brew "wget", args: ["build-from-source"]
+#brew "libtool", args: ["build-from-source"]
+#brew "cmake", args: ["build-from-source"]
+#brew "pkgconfig", args: ["build-from-source"]
+#brew "check", args: ["build-from-source"]
+#brew "libvpx", args: ["build-from-source"]
+#brew "opus", args: ["build-from-source"]
+#brew "libsodium", args: ["build-from-source"]
+#brew "cmake", args: ["build-from-source"]
+#brew "ffmpeg", args: ["build-from-source"]
+#brew "libexif", args: ["build-from-source"]
+#brew "qrencode", args: ["build-from-source"]
+#brew "qt5", args: ["build-from-source"]
+#brew "sqlcipher", args: ["build-from-source"]
+#brew "openal-soft", args: ["build-from-source"]
+## accelerate builds with ccache
+#brew "ccache"
+
 # brew install  #kf5-sonnet
 
 # needed for kf5-sonnet
 # brew tap kde-mac/kde https://invent.kde.org/packaging/homebrew-kde.git
-# brew "kf5-sonnet"
+# brew "kf5-sonnet", args: ["build-from-source"]

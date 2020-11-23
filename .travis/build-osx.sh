@@ -19,6 +19,7 @@
 set -eu -o pipefail
 
 readonly BIN_NAME="qTox.dmg"
+export MACOSX_DEPLOYMENT_TARGET=10.13
 
 # Build OSX
 build() {
@@ -41,9 +42,45 @@ make_hash() {
     shasum -a 256 "$BIN_NAME" > "$BIN_NAME".sha256
 }
 
-main() {
-    build
-    check
-    make_hash
+install_qt() {
+    brew install --build-from-source qt5
 }
-main
+
+install_other() {
+    # abilinski: urg brewfile doesn't seem to support --build-from-source
+    # brew bundle install -f ./osx/Brewfile
+    # accelerate builds with ccache
+    brew install --build-from-source ccache
+    brew install --build-from-source git
+    brew install --build-from-source wget
+    brew install --build-from-source libtool
+    brew install --build-from-source cmake
+    brew install --build-from-source pkgconfig
+    brew install --build-from-source check
+    brew install --build-from-source libvpx
+    brew install --build-from-source opus
+    brew install --build-from-source libsodium
+    brew install --build-from-source cmake
+    brew install --build-from-source ffmpeg
+    brew install --build-from-source libexif
+    brew install --build-from-source qrencode
+    brew install --build-from-source qt5
+    brew install --build-from-source sqlcipher
+    brew install --build-from-source openal-soft
+}
+
+main() {
+    if [ $# -eq 0 ]; then
+        build
+        check
+        make_hash
+    fi
+    if [ $1 = "1" ]; then
+        install_qt
+    elif [ $1 = "2" ]; then
+        install_other
+    else
+        echo "bad arg"
+    fi
+}
+main "$@"
