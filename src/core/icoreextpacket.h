@@ -65,5 +65,4 @@ public:
      * @brief Gets a new packet builder for friend with core friend id friendId
      */
     virtual std::unique_ptr<ICoreExtPacket> getPacket(uint32_t friendId) = 0;
-    virtual uint64_t getMaxSendingSize(uint32_t friendId) = 0;
 };

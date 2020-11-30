@@ -52,7 +52,7 @@ public:
      * @param[in] pointer to core tox instance
      * @return CoreExt on success, nullptr on failure
      */
-    static std::unique_ptr<CoreExt> makeCoreExt(Tox* core);
+    static std::unique_ptr<CoreExt> makeCoreExt(Tox* core, uint64_t defaultMaxSendingSize);
 
     // We do registration with our own pointer, need to ensure we're in a stable location
     CoreExt(CoreExt const& other) = delete;
@@ -110,21 +110,24 @@ public:
     };
 
     std::unique_ptr<ICoreExtPacket> getPacket(uint32_t friendId) override;
-    uint64_t getMaxSendingSize(uint32_t friendId) override;
 
 signals:
     void extendedMessageReceived(uint32_t friendId, const QString& message);
     void extendedReceiptReceived(uint32_t friendId, uint64_t receiptId);
     void extendedMessageSupport(uint32_t friendId, bool supported);
+    void maxSendingSizeFound(uint32_t friendId, uint64_t maxSendingSize);
 
 public slots:
     void onFriendStatusChanged(uint32_t friendId, Status::Status status);
+
+public:
+    const uint64_t noSupportMaxSendingSize;
 
 private:
 
     static void onExtendedMessageReceived(uint32_t friendId, const uint8_t* data, size_t size, void* userData);
     static void onExtendedMessageReceipt(uint32_t friendId, uint64_t receiptId, void* userData);
-    static void onExtendedMessageNegotiation(uint32_t friendId, bool compatible, void* userData);
+    static void onExtendedMessageNegotiation(uint32_t friendId, bool compatible, uint64_t negotiatedMaxSendingSize, void* userData);
 
     // A little extra cost to hide the deleters, but this lets us fwd declare
     // and prevent any extension headers from leaking out to the rest of the
@@ -132,7 +135,7 @@ private:
     template <class T>
     using ExtensionPtr = std::unique_ptr<T, void(*)(T*)>;
 
-    CoreExt(ExtensionPtr<ToxExt> toxExt);
+    CoreExt(ExtensionPtr<ToxExt> toxExt, uint64_t defaultMaxSendingSize);
 
     std::unordered_map<uint32_t, Status::Status> currentStatuses;
     ExtensionPtr<ToxExt> toxExt;

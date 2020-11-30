@@ -32,19 +32,20 @@ extern "C" {
 #include <tox_extension_messages.h>
 }
 
-std::unique_ptr<CoreExt> CoreExt::makeCoreExt(Tox* core) {
+std::unique_ptr<CoreExt> CoreExt::makeCoreExt(Tox* core, uint64_t defaultMaxSendingSize) {
     auto toxExtPtr = toxext_init(core);
     if (!toxExtPtr) {
         return nullptr;
     }
 
     auto toxExt = ExtensionPtr<ToxExt>(toxExtPtr, toxext_free);
-    return std::unique_ptr<CoreExt>(new CoreExt(std::move(toxExt)));
+    return std::unique_ptr<CoreExt>(new CoreExt(std::move(toxExt), defaultMaxSendingSize));
 }
 
-CoreExt::CoreExt(ExtensionPtr<ToxExt> toxExt_)
+CoreExt::CoreExt(ExtensionPtr<ToxExt> toxExt_, uint64_t defaultMaxSendingSize)
     : toxExt(std::move(toxExt_))
     , toxExtMessages(nullptr, nullptr)
+    , noSupportMaxSendingSize(defaultMaxSendingSize)
 {
     toxExtMessages = ExtensionPtr<ToxExtensionMessages>(
         tox_extension_messages_register(
@@ -83,21 +84,6 @@ std::unique_ptr<ICoreExtPacket> CoreExt::getPacket(uint32_t friendId)
         toxext_packet_list_create(toxExt.get(), friendId),
         toxExtMessages.get(),
         PacketPassKey{}));
-}
-
-uint64_t CoreExt::getMaxSendingSize(uint32_t friendId)
-{
-    enum Tox_Extension_Messages_Error err;
-    auto maxSendingSize = tox_extension_messages_get_max_sending_size(
-        toxExtMessages.get(),
-        friendId,
-        &err);
-    
-    if (err != TOX_EXTENSION_MESSAGES_SUCCESS) {
-        qWarning() << "Error getting max sending size for friend" << friendId;
-        maxSendingSize = 0;
-    }
-    return maxSendingSize;
 }
 
 uint64_t CoreExt::Packet::addExtendedMessage(QString message, uint32_t friendId)
@@ -164,6 +150,7 @@ void CoreExt::onFriendStatusChanged(uint32_t friendId, Status::Status status)
     // constructed. In this case we should still ensure the rest of the system
     // knows there is no extension support
     if (status == Status::Status::Offline) {
+        emit maxSendingSizeFound(friendId, noSupportMaxSendingSize);
         emit extendedMessageSupport(friendId, false);
     } else if (prevStatus == Status::Status::Offline) {
         tox_extension_messages_negotiate(toxExtMessages.get(), friendId);
@@ -181,8 +168,13 @@ void CoreExt::onExtendedMessageReceipt(uint32_t friendId, uint64_t receiptId, vo
     emit static_cast<CoreExt*>(userData)->extendedReceiptReceived(friendId, receiptId);
 }
 
-void CoreExt::onExtendedMessageNegotiation(uint32_t friendId, bool compatible, void* userData)
+void CoreExt::onExtendedMessageNegotiation(uint32_t friendId, bool compatible, uint64_t negotiatedMaxSendingSize, void* userData)
 {
     auto coreExt = static_cast<CoreExt*>(userData);
+    const auto maxSize = compatible ?
+        negotiatedMaxSendingSize :
+        coreExt->noSupportMaxSendingSize;
+
+    emit coreExt->maxSendingSizeFound(friendId, maxSize);
     emit coreExt->extendedMessageSupport(friendId, compatible);
 }

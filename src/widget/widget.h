@@ -174,6 +174,7 @@ public slots:
     void onFriendMessageReceived(uint32_t friendnumber, const QString& message, bool isAction);
     void onReceiptReceived(int friendId, ReceiptNum receipt);
     void onExtendedMessageSupport(uint32_t friendNumber, bool supported);
+    void onMaxSendingSizeSet(uint32_t friendNumber, uint64_t maxSendingSize);
     void onFriendExtMessageReceived(uint32_t friendNumber, const QString& message);
     void onExtReceiptReceived(uint32_t friendNumber, uint64_t receiptId);
     void onFriendRequestReceived(const ToxPk& friendPk, const QString& message);

@@ -208,9 +208,19 @@ void Friend::setExtendedMessageSupport(bool supported)
     }
 }
 
+void Friend::setMaxSendingSize(uint64_t maxSendingSize)
+{
+    this->maxSendingSize = maxSendingSize;
+}
+
 ExtensionSet Friend::getSupportedExtensions() const
 {
     return supportedExtensions;
+}
+
+uint64_t Friend::getMaxSendingSize() const
+{
+    return maxSendingSize;
 }
 
 void Friend::onNegotiationComplete() {

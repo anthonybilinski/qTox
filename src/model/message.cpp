@@ -23,6 +23,38 @@
 
 #include <cassert>
 
+namespace {
+    QStringList splitMessage(const QString& message, uint64_t maxLength)
+    {
+        QStringList splittedMsgs;
+        QByteArray ba_message{message.toUtf8()};
+        while (static_cast<uint64_t>(ba_message.size()) > maxLength) {
+            int splitPos = ba_message.lastIndexOf('\n', maxLength - 1);
+
+            if (splitPos <= 0) {
+                splitPos = ba_message.lastIndexOf(' ', maxLength - 1);
+            }
+
+            if (splitPos <= 0) {
+                constexpr uint8_t firstOfMultiByteMask = 0xC0;
+                constexpr uint8_t multiByteMask = 0x80;
+                splitPos = maxLength;
+                // don't split a utf8 character
+                if ((ba_message[splitPos] & multiByteMask) == multiByteMask) {
+                    while ((ba_message[splitPos] & firstOfMultiByteMask) != firstOfMultiByteMask) {
+                        --splitPos;
+                    }
+                }
+                --splitPos;
+            }
+            splittedMsgs.append(QString{ba_message.left(splitPos + 1)});
+            ba_message = ba_message.mid(splitPos + 1);
+        }
+
+        splittedMsgs.append(QString{ba_message});
+        return splittedMsgs;
+    }
+}
 void MessageProcessor::SharedParams::onUserNameSet(const QString& username)
 {
     QString sanename = username;
@@ -51,17 +83,11 @@ MessageProcessor::MessageProcessor(const MessageProcessor::SharedParams& sharedP
 /**
  * @brief Converts an outgoing message into one (or many) sanitized Message(s)
  */
-std::vector<Message> MessageProcessor::processOutgoingMessage(bool isAction, QString const& content, ExtensionSet extensions)
+std::vector<Message> MessageProcessor::processOutgoingMessage(bool isAction, QString const& content, ExtensionSet extensions, uint64_t maxSendingSize)
 {
     std::vector<Message> ret;
 
-    // TODO: add splitting for extended messages too :S
-    // I guess ideally would hold a map of friend -> max size,
-    // that's populated by signal when the friends negotiation finishes
-    const auto needsSplit = !extensions[ExtensionType::messages] || isAction;
-    const auto splitMsgs = needsSplit
-        ? Core::splitMessage(content)
-        : QStringList({content});
+    const auto splitMsgs = splitMessage(content, maxSendingSize);
 
     ret.reserve(splitMsgs.size());
 

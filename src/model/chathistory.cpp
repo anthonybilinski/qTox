@@ -441,7 +441,7 @@ void ChatHistory::dispatchUnsentMessages(IMessageDispatcher& messageDispatcher)
             // up having to split more than when we added the message to history we'll
             // just associate the last dispatched id with the history message
             ? messageDispatcher.sendMessage(isAction, messageContent).second
-            : messageDispatcher.sendExtendedMessage(messageContent, requiredExtensions, f.getPublicKey());
+            : messageDispatcher.sendExtendedMessage(messageContent, requiredExtensions, f.getPublicKey()).second;
 
         handleDispatchedMessage(dispatchId, message.id);
 

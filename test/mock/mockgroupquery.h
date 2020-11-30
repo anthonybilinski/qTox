@@ -77,6 +77,11 @@ public:
         emptyGroup = false;
     }
 
+    uint64_t getGroupMaxSendingSize(int groupId) const override
+    {
+        return 1000;
+    }
+
 private:
     bool emptyGroup = false;
 };

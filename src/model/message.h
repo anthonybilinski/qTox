@@ -94,7 +94,7 @@ public:
 
     MessageProcessor(const SharedParams& sharedParams);
 
-    std::vector<Message> processOutgoingMessage(bool isAction, const QString& content, ExtensionSet extensions);
+    std::vector<Message> processOutgoingMessage(bool isAction, const QString& content, ExtensionSet extensions, uint64_t maxSendingSize);
     Message processIncomingCoreMessage(bool isAction, const QString& content);
     Message processIncomingExtMessage(const QString& content);
 

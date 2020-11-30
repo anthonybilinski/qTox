@@ -57,7 +57,9 @@ public:
     bool useHistory() const final;
 
     void setExtendedMessageSupport(bool supported);
+    void setMaxSendingSize(uint64_t maxSendingSize);
     ExtensionSet getSupportedExtensions() const;
+    uint64_t getMaxSendingSize() const override;
 
 signals:
     void nameChanged(const ToxPk& friendId, const QString& name);
@@ -80,4 +82,5 @@ private:
     Status::Status friendStatus;
     bool isNegotiating;
     ExtensionSet supportedExtensions;
+    uint64_t maxSendingSize;
 };

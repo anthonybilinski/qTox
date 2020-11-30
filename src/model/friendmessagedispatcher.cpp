@@ -40,7 +40,7 @@ FriendMessageDispatcher::sendMessage(bool isAction, const QString& content)
 {
     const auto firstId = nextMessageId;
     auto lastId = nextMessageId;
-    for (const auto& message : processor.processOutgoingMessage(isAction, content, f.getSupportedExtensions())) {
+    for (const auto& message : processor.processOutgoingMessage(isAction, content, f.getSupportedExtensions(), f.getMaxSendingSize())) {
         auto messageId = nextMessageId++;
         lastId = messageId;
 
@@ -55,19 +55,22 @@ FriendMessageDispatcher::sendMessage(bool isAction, const QString& content)
 /**
  * @see IMessageDispatcher::sendExtendedMessage
  */
-DispatchedMessageId FriendMessageDispatcher::sendExtendedMessage(const QString& content, ExtensionSet extensions, const ContactId& friendPk)
+std::pair<DispatchedMessageId, DispatchedMessageId>
+FriendMessageDispatcher::sendExtendedMessage(const QString& content, ExtensionSet extensions, const ContactId& friendPk)
 {
-    auto messageId = nextMessageId++;
+    const auto firstId = nextMessageId;
+    auto lastId = nextMessageId;
 
-    auto messages = processor.processOutgoingMessage(false, content, extensions);
-    assert(messages.size() == 1);
+    for (const auto& message : processor.processOutgoingMessage(false, content, extensions, f.getMaxSendingSize())) {
+        auto messageId = nextMessageId++;
+        lastId = messageId;
 
-    auto onOfflineMsgComplete = getCompletionFn(messageId);
-    sendProcessedMessage(messages[0], onOfflineMsgComplete);
+        auto onOfflineMsgComplete = getCompletionFn(messageId);
+        sendProcessedMessage(message, onOfflineMsgComplete);
 
-    emit this->messageSent(messageId, messages[0]);
-
-    return messageId;
+        emit this->messageSent(messageId, message);
+    }
+    return std::make_pair(firstId, lastId);
 }
 
 /**

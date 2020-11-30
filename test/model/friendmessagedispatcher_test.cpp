@@ -64,11 +64,6 @@ public:
         return std::unique_ptr<MockCoreExtPacket>(new MockCoreExtPacket(numSentMessages, currentReceiptId));
     }
 
-    uint64_t getMaxSendingSize(uint32_t friendId) override
-    {
-        return 1024*1024*1024;
-    }
-
     uint64_t numSentMessages;
     uint64_t currentReceiptId;
 };

@@ -701,6 +701,7 @@ void Widget::onCoreChanged(Core& core)
     connect(coreExt, &CoreExt::extendedMessageReceived, this, &Widget::onFriendExtMessageReceived);
     connect(coreExt, &CoreExt::extendedReceiptReceived, this, &Widget::onExtReceiptReceived);
     connect(coreExt, &CoreExt::extendedMessageSupport, this, &Widget::onExtendedMessageSupport);
+    connect(coreExt, &CoreExt::maxSendingSizeFound, this, &Widget::onMaxSendingSizeSet);
 
     connect(this, &Widget::statusSet, &core, &Core::setStatus);
     connect(this, &Widget::friendRequested, &core, &Core::requestFriendship);
@@ -1437,6 +1438,16 @@ void Widget::onExtendedMessageSupport(uint32_t friendNumber, bool compatible)
     f->setExtendedMessageSupport(compatible);
 }
 
+void Widget::onMaxSendingSizeSet(uint32_t friendNumber, uint64_t maxSendingSize)
+{
+    const auto& friendKey = FriendList::id2Key(friendNumber);
+    Friend* f = FriendList::findFriend(friendKey);
+    if (!f) {
+        return;
+    }
+    f->setMaxSendingSize(maxSendingSize);
+}
+
 void Widget::onFriendExtMessageReceived(uint32_t friendNumber, const QString& message)
 {
     const auto& friendKey = FriendList::id2Key(friendNumber);
@@ -2111,7 +2122,7 @@ Group* Widget::createGroup(uint32_t groupnumber, const GroupId& groupId)
     const auto groupName = tr("Groupchat #%1").arg(groupnumber);
     const bool enabled = core->getGroupAvEnabled(groupnumber);
     Group* newgroup =
-        GroupList::addGroup(*core, groupnumber, groupId, groupName, enabled, core->getUsername());
+        GroupList::addGroup(*core, groupnumber, groupId, groupName, enabled, core->getUsername(), core->getMaxMessageSize());
     assert(newgroup);
 
     if (enabled) {
