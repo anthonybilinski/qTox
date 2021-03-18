@@ -47,7 +47,7 @@ jobs:
       env: JOB=build-ubuntu-16-04
       addons:
         apt:
-          packages: 
+          packages:
             - lcov
       script: "./.travis/$JOB.sh"
       after_success:
