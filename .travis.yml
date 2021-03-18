@@ -46,18 +46,7 @@ jobs:
     - stage: Linux
       os: linux
       env: JOB=build-ubuntu-16-04
-      addons:
-        apt:
-          packages: 
-            - lcov
       script: "./.travis/$JOB.sh"
-      after_success:
-        # Create lcov report
-        - lcov --directory _debug --capture --output-file coverage.info
-        # Filter out system headers and test sources
-        - lcov --remove coverage.info '/usr/*' '*/test/*' '*/*_autogen/*' --output-file coverage.info
-        # Upload report to codecov.io 
-        - bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"
     - stage: "Windows Stage 1: Dependencies (OpenSSL, Qt)"
       os: linux
       # Makes the cache this job creates avaiable only to jobs with WINDOWS_BUILD_ARCH_CACHE_TRICK_VARIABLE=i686,
@@ -156,7 +145,7 @@ jobs:
       cache:
         directories:
           - /opt/build-windows/x86_64
-    - stage: "macOS, AppImage and Flatpak"
+    - stage: "macOS, AppImage, Flatpak, coverage"
       os: osx
       osx_image: xcode10.2 # macOS 10.14, oldest supported SDK according to https://developer.apple.com/support/xcode/
       env: JOB=build-osx
@@ -178,7 +167,7 @@ jobs:
         - .travis/cirp/cleanup1.sh
         - .travis/cirp/store.sh "$ARTIFACTS_DIR"
         - .travis/cirp/cleanup2.sh
-    - stage: "macOS, AppImage and Flatpak"
+    - stage: "macOS, AppImage, Flatpak, coverage"
       os: linux
       env: JOB=APPIMAGE
       script:
@@ -190,7 +179,7 @@ jobs:
         - .travis/cirp/cleanup2.sh
       services:
         - docker
-    - stage: "macOS, AppImage and Flatpak"
+    - stage: "macOS, AppImage, Flatpak, coverage"
       os: linux
       env: JOB=FLATPAK
       script:
@@ -202,6 +191,24 @@ jobs:
         - .travis/cirp/cleanup2.sh
       services:
         - docker
+    - stage: "macOS, AppImage, Flatpak, coverage"
+      # this duplicates the entire build and test from stage 1, but allows the
+      # lengthly code coverage to be parallelized, and allows for the most
+      # common build and test failures to be caught more quickly in stage 1
+      os: linux
+      env: JOB=build-ubuntu-16-04
+      addons:
+        apt:
+          packages:
+            - lcov
+      script: "./.travis/$JOB.sh"
+      after_success:
+        # Create lcov report
+        - lcov --directory _debug --capture --output-file coverage.info
+        # Filter out system headers and test sources
+        - lcov --remove coverage.info '/usr/*' '*/test/*' '*/*_autogen/*' --output-file coverage.info
+        # Upload report to codecov.io 
+        - bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"
     - stage: "Nightly publishing"
       if: type == cron
       script:
