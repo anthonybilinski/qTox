@@ -7,6 +7,7 @@ cache: ccache
 branches:
   only:
     - master
+    - orig_coverage
     - /^v\d+\.\d+-dev$/
     - /^v(\d+\.){2}\d+$/
 
