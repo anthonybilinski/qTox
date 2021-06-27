@@ -30,12 +30,11 @@
  */
 AlSource::AlSource(OpenAL& al)
     : audio(al)
-    , killLock(QMutex::Recursive)
 {}
 
 AlSource::~AlSource()
 {
-    QMutexLocker{&killLock};
+    QMutexLocker locker{&killLock};
 
     // unsubscribe only if not already killed
     if (!killed) {
@@ -46,7 +45,7 @@ AlSource::~AlSource()
 
 AlSource::operator bool() const
 {
-    QMutexLocker{&killLock};
+    QMutexLocker locker{&killLock};
     return !killed;
 }
 
